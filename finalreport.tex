@@ -25,28 +25,34 @@
 \maketitle
 
 % preamble
-\include{abstract}
-\include{acknowledgements}
+\include{front_matter/abstract}
+\include{front_matter/acknowledgements}
 \tableofcontents
 \listoffigures
 \listoftables
-\include{glossary}
-\include{abbrev}
+\include{front_matter/glossary}
+\include{front_matter/abbrev}
 
 % main body
-\include{chapter1}
-%\include{chapter2}
-%\include{chapter3}
-%\include{chapter4}
-%\include{chapter5}
-%\include{chapter6}
-%\include{chapter7}
+\include{chapters/chapter1}
+\include{chapters/chapter2}
+\include{chapters/chapter3}
+\include{chapters/chapter4}
+\include{chapters/chapter5}
+\include{chapters/chapter6}
+\include{chapters/chapter7}
+\include{chapters/chapter8}
 
 % appendices
 \appendix
-%\include{appenda}
-%\include{appendb}
+\include{appendices/appendix_a_code_listings}
+\include{appendices/appendix_b_additional_results}
+\include{appendices/appendix_c_user_guide}
+\include{appendices/appendix_d_game_examples}
+\include{appendices/appendix_e_ethical_approval}
+\include{appendices/appendix_f_project_planning}
 
+\nocite{*}
 \bibliographystyle{agsm}
 \bibliography{references}
 
