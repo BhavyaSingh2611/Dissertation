@@ -1,36 +1,128 @@
 \chapter{Introduction}
 
 \section{Problem Statement}
-% Why developing ML-based chess bots is challenging
+For decades, the game of chess has been a benchmark of Artificial
+Intelligence progress — a controlled environment used to measure the evolution
+of machine logic. Early milestones, such as IBM's Deep Blue, relied on carefully
+handcrafted heuristics and "brute force" calculations. While effective, these
+systems were inherently restrictive, struggling to generalize beyond the specific
+rules encoded by their creators.
+
+Today, the landscape is dominated by neural-heavy architectures like AlphaZero,
+MuZero, and Leela Chess Zero. These engines have pushed ELO ratings beyond the
+3500 mark, effectively concluding the era of human-computer competition. However,
+this superiority comes at a cost: modern engines are increasingly reliant on
+massive computational overhead and deep search trees to maintain their edge.
 
 \section{Motivation}
-% Scientific interest (understanding learning in strategic games)
-% Importance to AI research and game-playing systems
+The current state-of-the-art engines are outstanding, but they are
+also "computationally greedy." Their strength is acquired from exploring millions
+of potential future states (search) before making a move. This reliance on
+search constitutes a difficult obstacle to entry for mobile or edge-computing
+applications.
+
+The motivation lies in the pursuit of "Search-less Chess." By leveraging
+Convolutional Neural Networks (CNNs), Transformers, and Graph Neural Networks
+(GNNs). We aim to investigate whether a model can develop a "grandmaster's
+intuition"—the ability to look at a board and immediately identify the optimal
+move without the safety net of a search algorithm. This would not only
+drastically reduce move latency but also offer insights into how deep learning
+architectures internalize complex spatial and strategic relationships.
 
 \section{The Challenge of Chess}
-% Why is it hard?
+Chess is a game of perfect information, yet it remains computationally
+"unsolved" because of its high strategic depth. A player must simultaneously
+balance tactical immediate threats (checks, captures) with abstract long-term
+goals (piece mobility, pawn structure, and king safety).
+
 \subsection{Computational Complexity}
-% Large state space
+The complexity of chess is often illustrated by Shannon's Number, which
+estimates the game tree complexity at approximately $10^{120}$. Even the state
+space—the number of possible legal positions—is estimated at $10^{40}$. Because
+the number of possible variations grows exponentially with every half-move
+(ply), brute-force calculation is a physical impossibility. This necessitates an
+approach that can prune the search space or, as we propose, bypass it entirely
+through high-fidelity policy prediction.
+
 \subsection{Failure of Naive Approaches}
-% e.g., pure brute force, simple heuristics
+Simple heuristics (e.g., assigning a point value to pieces) fail because chess
+is highly contextual; a Queen is worthless if the King is in an inescapable
+checkmate. Naive machine learning models often fall into the trap of "greedy"
+play—capturing material while ignoring a looming positional collapse. Without
+the "look-ahead" provided by search, a model must be significantly more
+sophisticated to recognize the subtle cues that distinguish a winning position
+from a losing one.
 
 \section{Critique of Existing Solutions}
-% Highlight gaps that your approach addresses
+Current engines like Stockfish 18 are incredibly powerful but function as "black
+boxes" of search optimization. They require significant CPU/GPU resources to
+reach their peak ELO. Furthermore, even hybrid models like Leela Chess
+Zero—which use neural networks for evaluation—still rely on Monte Carlo Tree
+Search (MCTS) to validate their "hunches."
 
 \section{Overview of My Approach}
-\subsection{Machine Learning Techniques}
-% Supervised learning, reinforcement learning
+\subsection{Machine Learning Architectures}
+This project explores an architectural comparison to determine
+which structure best captures the tactical and strategic nuances of chess
+without search.
+
+\begin{itemize}
+    \item \textbf{CNNs:} To treat the board as a 2D image, capturing local
+    spatial patterns and piece interactions.
+    \item \textbf{Transformers:} To leverage self-attention mechanisms, allowing
+    the model to understand long-range dependencies across the board (e.g., a
+    Bishop's influence from a8 to h1).
+    \item \textbf{GNNs:} To model the board as a dynamic graph where pieces are
+    nodes and their legal moves are edges, emphasizing the relational geometry
+    of the game.
+\end{itemize}
+We will train these models using the Lichess Stockfish dataset, effectively
+"distilling" the knowledge of a 3500-ELO engine into our search-less
+architectures.
+
 \subsection{Comparison Methodology}
+To validate our approach, we will benchmark our models against Stockfish at
+varying "depth" constraints. This allows us to simulate different ELO ranges and
+see exactly where a search-less model begins to falter compared to a searching
+engine. Additionally, we will use the Lichess Puzzle dataset to test the models
+on specific tactical motifs, providing a granular look at their "chess IQ" in
+areas like forks, pins, and endgame transitions.
 
 \section{Summary of Key Results}
-% High-level achievements
+% [TODO: To be completed following the experimental phase.]
 
 \section{Scope and Limitations}
-% Scope boundaries (what you didn't attempt)
+The goal of this research is not to compete with the world's strongest engines,
+but to push the ceiling of what is possible within the "search-less" paradigm.
+
+\textbf{Limitations:} We acknowledge that without search, our models may
+struggle with "horizon effects," where a tactic requires a deep calculation
+beyond the model's immediate pattern recognition. Similarly, highly technical
+endgames (e.g., Rook, and Bishop vs. Rook) may remain a challenge for a purely
+intuitive model.
 
 \section{Aims and Objectives}
-% Clear, measurable objectives
-% What success looks like
+The primary objective is to engineer and evaluate a suite of deep learning
+models (CNN, Transformer, GNN) capable of achieving a 2000 ELO rating without
+the use of search algorithms. Success will be measured by:
+\begin{enumerate}
+ \item \textbf{Inference Speed:} Demonstrating a significant reduction in
+ move generation time compared to traditional engines.
+ \item \textbf{Generalization:} Proving the model has "learned" chess
+ principles rather than memorized positions, verified via performance on
+ unseen puzzle sets.
+ \item \textbf{Comparative Analysis:} Identifying which architecture
+ (spatial, relational, or sequential) is best suited for the unique geometry
+ of chess.
+\end{enumerate}
 
 \section{Report Structure}
-% Brief overview of remaining chapters
+The remainder of this report is organized as follows: 
+\textbf{Chapter 2} surveys the history of chess AI and the technical evolution
+of deep learning in games. 
+\textbf{Chapter 3} details our methodology, from data curation and normalization
+to the specific hyperparameters of our three architectures. 
+\textbf{Chapter 4} presents a rigorous analysis of the results, including ELO
+benchmarking and tactical performance. 
+Finally, \textbf{Chapter 5} discusses the implications of these findings for the
+future of lightweight, intuitive AI.

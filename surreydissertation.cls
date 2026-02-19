@@ -13,7 +13,7 @@
 \RequirePackage[T1]{fontenc}
 \RequirePackage[utf8]{inputenc}
 
-\RequirePackage[left=1.0in,right=1.0in,top=1.0in,bottom=1.0in,
+\RequirePackage[left=0.5in,right=0.5in,top=0.5in,bottom=1in,
    head=0.5in,foot=0.5in]{geometry}
 \RequirePackage{fancyhdr}
 \RequirePackage{graphicx}
