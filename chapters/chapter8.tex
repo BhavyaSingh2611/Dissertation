@@ -1,8 +1,17 @@
 \chapter{Conclusion}
 
-% Restatement of problem and objectives
-% Summary of your approach
-% Key findings and contributions
-% Significance of results
-% Limitations acknowledged
-% Final thoughts
+This project set out to investigate whether deep learning architectures can develop meaningful chess-playing ability without the safety net of search algorithms. To this end, a modular framework was engineered that supports six neural network backbones—ConvNet, ResNet, SquareTransformer, PieceTransformer, GCN, and GAT—each trainable under identical conditions with interchangeable policy, value, and dual output heads.
+
+The framework makes several contributions. First, it provides the first controlled, cross-architecture comparison of CNN, Transformer, and GNN models trained on the same Lichess Stockfish evaluation data with consistent preprocessing, loss functions, and evaluation protocols. Second, it demonstrates that knowledge distillation from a strong engine via soft policy labels is a viable and scalable training signal for search-less models.
+
+The project evolved substantially beyond its initial design. The CNN encoder was extended from 18 to 32 channels with tactical feature planes (attack/defence maps, mobility, pin detection, king safety) and per-piece-type material imbalance encoding, injecting domain knowledge that would otherwise require many layers to learn. The ResNet backbone was augmented with Squeeze-and-Excitation blocks for dynamic channel attention, and a spatial policy head replaced global average pooling to preserve square-level information critical for move selection. The Transformer models adopted Flash Attention for improved memory efficiency and training throughput.
+
+Most significantly, the data pipeline was redesigned from a streaming Parquet reader into a five-stage offline system capable of handling over one billion positions. DuckDB-based deduplication removes redundant positions, PV line unrolling generates diverse intermediate positions with inherited evaluations (validated at 96\% accuracy within $\pm 100$cp), and Syzygy tablebase enrichment provides mathematically perfect labels for endgame positions with five or fewer pieces. The resulting binary-sharded dataset, with packed bitboard storage and sparse policy representations, enables efficient memory-mapped training at scale.
+
+From a software engineering perspective, the backbone--head decoupling pattern, the factory-based model creation, and the YAML-driven configuration system collectively lower the barrier to experimentation: adding a new architecture requires implementing a single abstract class, while all training, evaluation, and benchmarking infrastructure is reused without modification.
+
+The project acknowledges several limitations. Without search, the models are expected to struggle with deep tactical sequences (the ``horizon effect'') and highly technical endgames beyond the tablebase's piece-count threshold. The GNN encoder's computational cost, driven by per-position attack relation computation, remains a training throughput bottleneck despite the offline pre-encoding pipeline addressing this for CNN and Transformer models.
+
+Looking ahead, reinforcement learning via MCTS self-play and curriculum-based Stockfish RL represents the most promising direction for pushing model strength beyond the supervised learning ceiling. The planned Go/Svelte web platform would provide an accessible interface for human-vs-bot and bot-vs-bot interaction, and the exploration of sequence modelling approaches (Decision Transformer-style autoregressive move prediction) could enable genuine multi-move planning without explicit search.
+
+In summary, this project demonstrates that the ``search-less chess'' paradigm is not only technically feasible but also a fertile ground for comparing how different neural network families internalise spatial, relational, and sequential structure. The framework—with its enhanced encoders, attention mechanisms, and billion-position data pipeline—provides the infrastructure for this ongoing investigation.

@@ -1,65 +1,82 @@
 \chapter{Legal, Social, Ethical, and Professional Issues}
 
 \section{Ethical Considerations}
+
 \subsection{Research Ethics}
-% Ethical approval obtained (reference SAGE form)
-% No human subjects, but discuss if framework could be used with them
+This project does not involve human participants, personal data collection, or experimentation on living subjects. Ethical approval was obtained through the University of Surrey's SAGE (Self-Assessment for Governance and Ethics) process, which confirmed that the project falls within the low-risk category. All training data is derived from publicly available chess game databases and open-source engine evaluations.
+
 \subsection{Responsible AI}
-% Fairness in game AI
-% Transparency of decision-making
-% Potential for bias in training data
+The models developed in this project are narrow AI systems designed exclusively for chess move prediction and position evaluation. They pose no direct risk of harm. However, the broader principle of transparency in AI decision-making is relevant: the framework's evaluation pipeline (centipawn tracking, PGN export) provides full traceability of every move decision, and the soft policy labels expose the model's uncertainty across candidate moves. This level of interpretability exceeds that of most commercial chess engines, which return only their top move without a probability distribution.
+
+Bias in training data is a consideration: the Lichess Stockfish evaluation dataset reflects the engine's playing style and evaluation heuristics. Models trained on this data will inherit Stockfish's strategic preferences (e.g., material-focused evaluation), which may not align with alternative playing styles. This is an acceptable limitation given the project's goal of knowledge distillation from a strong engine.
 
 \section{Legal Issues}
+
 \subsection{Intellectual Property}
-% Use of open-source libraries (licenses)
-% Your framework's license considerations
-% University IP policy compliance
-% Rights to training data
+The framework is developed as original work for the University of Surrey Final Year Project and complies with the University's intellectual property policy. No proprietary code or datasets are used.
+
 \subsection{Copyright and Licensing}
-% python-chess license
-% ML framework licenses
-% Dataset licenses
+All third-party libraries are used in compliance with their respective open-source licences:
+\begin{itemize}
+    \item \texttt{python-chess}: GPL-3.0 — permits use, modification, and distribution.
+    \item PyTorch: BSD-3-Clause — permissive licence with minimal restrictions.
+    \item PyTorch Geometric: MIT — permissive licence.
+    \item Stockfish: GPL-3.0 — used as an external binary for evaluation; the framework does not link against or modify its source code.
+    \item Lichess game data: Creative Commons CC0 — public domain, no restrictions on use.
+\end{itemize}
+
+The training dataset is derived from Lichess's publicly available database, which is released under Creative Commons CC0 (public domain). The Stockfish evaluations annotating this data are produced by an open-source engine and carry no additional copyright restrictions.
 
 \section{Social Issues}
+
 \subsection{Accessibility}
-% Who can use your framework?
-% Barriers to entry
+The framework is implemented in Python, the most widely taught programming language in computer science education, and uses well-documented libraries. The YAML configuration system and command-line training scripts are designed to be accessible to users with basic Python proficiency. The requirement for a GPU for practical training times is a barrier for some users, though the framework functions correctly on CPU.
+
 \subsection{Web Platform Accessibility}
-% Browser compatibility and device support
-% Accessibility standards (WCAG)
-% Ensuring inclusive design
+The planned web platform targets modern evergreen browsers (Chrome, Firefox, Safari, Edge) and is designed to be responsive across desktop and tablet screen sizes. The SVG-based board rendering ensures crisp display at any resolution. Keyboard accessibility for move input and ARIA labels for screen readers are planned but not yet implemented.
+
 \subsection{Impact on Chess Community}
-% Contribution to computer chess
-% Education and learning applications
-% Impact on human players
+The project contributes to the growing body of open-source chess AI research. By providing a controlled multi-architecture comparison and an accessible web interface, it may serve as an educational resource for players interested in understanding how neural networks evaluate positions. The models are not strong enough to be used for cheating in competitive play, and the framework includes no mechanisms for real-time assistance during online games.
 
 \section{Professional Issues}
+
 \subsection{Code of Conduct}
-% BCS Code of Conduct adherence
-% Professional software development practices
-% Documentation and reproducibility
+Development adheres to the BCS (British Computer Society) Code of Conduct, with particular attention to:
+\begin{itemize}
+    \item \textbf{Public interest:} The framework is designed as an open educational and research tool.
+    \item \textbf{Professional competence:} The codebase follows established software engineering practices including version control, automated testing, comprehensive documentation, and modular design.
+    \item \textbf{Duty to the profession:} All results are reported honestly, including negative results and known limitations.
+\end{itemize}
 
 \subsection{Information Security}
-% No security risks identified (or discuss any)
-% Safe handling of data
+The framework processes no personal data and stores no user credentials. The web platform's backend API validates all inputs (FEN strings, move UCI strings) before processing. No sensitive information (API keys, passwords) is hard-coded in the repository.
 
 \subsection{Web Platform Security}
-% Input validation and sanitisation
-% Protection against common web vulnerabilities
-% Data privacy for users of the platform
+The planned web platform mitigates common web vulnerabilities:
+\begin{itemize}
+    \item \textbf{Input Validation:} All FEN strings and UCI moves received from clients are validated against \texttt{python-chess} before execution.
+    \item \textbf{WebSocket Security:} Connections use WSS (WebSocket Secure) in production deployments.
+    \item \textbf{Rate Limiting:} Move submission endpoints are rate-limited to prevent denial-of-service via rapid move flooding.
+\end{itemize}
 
 \section{Sustainability}
+
 \subsection{Environmental Impact}
-% Computational resources and energy consumption
-% Carbon footprint of training
-% Efficiency considerations
+Neural network training is computationally intensive and carries a non-trivial carbon footprint. The following measures reduce the environmental impact of this project:
+\begin{itemize}
+    \item \textbf{Mixed-precision training} halves the memory bandwidth and increases throughput by up to 2$\times$, reducing the wall-clock time (and energy consumption) of each training run.
+    \item \textbf{Streaming data loading} avoids redundant I/O by reading each row-group exactly once per epoch.
+    \item \textbf{Checkpoint pruning} reduces storage overhead by retaining only every fifth epoch.
+    \item \textbf{Search-less inference} is the project's raison d'\^{e}tre: a single forward pass consumes orders of magnitude less energy than the millions of node evaluations performed by a searching engine.
+\end{itemize}
 
 \subsection{UN Sustainable Development Goals}
-% SDG 4 (Quality Education): Framework as educational tool
-% SDG 9 (Industry, Innovation, Infrastructure): Advancing AI research
-% SDG 12 (Responsible Consumption): Efficient use of computational resources
-% Specific connections to your project
+This project aligns with the following UN Sustainable Development Goals:
+\begin{itemize}
+    \item \textbf{SDG 4 (Quality Education):} The framework and web platform serve as educational tools for understanding deep learning architectures in an engaging, interactive context.
+    \item \textbf{SDG 9 (Industry, Innovation, and Infrastructure):} The project advances AI research by providing the first controlled cross-architecture comparison of CNN, Transformer, and GNN models on identical chess data.
+    \item \textbf{SDG 12 (Responsible Consumption and Production):} The emphasis on computational efficiency (mixed precision, search-less inference) reflects a commitment to minimising resource consumption.
+\end{itemize}
 
 \section{Summary}
-% Overall ethical posture of the project
-% Responsible development practices followed
+This project adopts a responsible development posture: it uses open-source tools and public-domain data, produces transparent and interpretable outputs, processes no personal information, and actively minimises its computational footprint. No significant ethical, legal, or social risks have been identified.
