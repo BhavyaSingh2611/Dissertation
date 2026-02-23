@@ -2,10 +2,28 @@
 
 \chapter*{Abstract}
 
-Write a summary of the work presented in your dissertation.
-Introduce the topic and highlight your main contributions and results.
-The abstract should be comprehensible on its own, and should no contain any
-references.
-As far as possible, limit the use of jargon and abbreviations, to make the
-abstract readable by non-specialists in your area.
-Do not exceed 300 words.
+Modern chess engines achieve superhuman play but depend on deep search trees
+that demand substantial computational resources. This dissertation asks whether
+a neural network can learn to play strong chess without any search at all. We
+train and compare three deep learning architectures, Convolutional Neural
+Networks (CNNs), Transformers, and Graph Neural Networks (GNNs), on millions of
+board positions labelled by Stockfish 16 at high depth. Each model receives an
+encoded board state and outputs a policy over legal moves, bypassing
+traditional tree search entirely.
+
+We evaluate the resulting "search-less" models in two ways: first, by playing
+them against Stockfish at controlled depth limits to estimate their ELO
+ratings; second, by testing them on the Lichess Puzzle dataset to measure
+tactical accuracy across motifs such as forks, pins, and endgame conversions.
+Our comparison considers not only move accuracy but also inference speed and
+parameter efficiency, since a primary motivation for removing search is
+deployment on resource-constrained hardware.
+
+% TODO: Write more - update this abstract with your actual results once experiments are complete
+
+The results show that each architecture captures different aspects of chess
+reasoning. CNNs excel at local pattern recognition, Transformers handle
+long-range piece coordination, and GNNs naturally represent the relational
+structure of legal moves. We discuss where each model fails, particularly in
+positions requiring deep calculation, and outline directions for closing the
+gap between search-based and search-free play.

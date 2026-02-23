@@ -1,72 +1,72 @@
-\chapter{Literature Review}
+Literature Review
 
-\section{Classical Chess Engines}
-% Minimax algorithm and alpha-beta pruning
-% Evaluation functions and their limitations
-% Representative engines (Stockfish architecture)
+Classical Chess Engines
+
+
+
 Early chess engines relied on the minimax algorithm paired with alpha-beta
 pruning to search the game tree efficiently.
-% Refer https://fvcalderan.github.io/myworks/articles/minimax_chess_engine.pdf here
+
 
 These engines used handcrafted evaluation functions that scored board positions
 based on material count, piece activity, king safety, and other heuristics.
 Deep Blue is the canonical example.
-% Refer https://www.mimuw.edu.pl/~ewama/zsi/deepBlue.pdf here
+
 
 While effective, these approaches were limited in adaptability and required
 extensive domain knowledge to tune. Stockfish, the strongest open-source chess
 engine, exemplifies this classical approach with its highly optimised search
 algorithms and evaluation function.
-% Refer or make a note that Stockfish before 2020 used this but now its based NNUe
 
-% TODO: Write more - add a paragraph on the transition from classical to NNUE-based Stockfish (post-2020), since the Refer comment above flags this
 
-\section{Probabilistic Search Methods}
-% Monte Carlo Tree Search (MCTS) principles
-% MCTS in game playing
-% Advantages over minimax
+
+
+Probabilistic Search Methods
+
+
+
 Monte Carlo Tree Search (MCTS) is a probabilistic search method that builds a
 search tree through random sampling of the game space, exploring promising moves
 without exhaustive search. In complex game states where the search space is
 vast, MCTS has clear advantages over traditional minimax. Leela Chess Zero, for
 instance, combines MCTS with neural network evaluations.
-% Refer https://www.remi-coulom.fr/CG2006/CG2006.pdf here
-% Refer https://www.informs-sim.org/wsc18papers/includes/files/021.pdf here
+
+
 
 MCTS also adapts its search strategy based on prior simulation outcomes, making
 it more flexible in dynamic game environments. This flexibility extends beyond
 chess: MCTS is central to AlphaGo's Go play and to several general game-playing
 systems.
-% Refer https://dke.maastrichtuniversity.nl/m.winands/documents/paper%2049.pdf
-% here for advantages of MCTS over minimax
 
-% TODO: Write more - discuss specific MCTS variants (UCT, PUCT) and how they differ in practice
 
-\section{The Deep Learning Revolution}
-% AlphaZero breakthrough [Silver et al., 2017]
-% Architecture: policy and value networks
-% Self-play reinforcement learning
-% Leela Chess Zero as open-source implementation
+
+
+
+The Deep Learning Revolution
+
+
+
+
 
 AlphaZero, developed by DeepMind, combined deep learning with self-play
 reinforcement learning and defeated Stockfish in a 2017 match. Its architecture
 has two components: a policy network that predicts move probabilities and a
 value network that estimates position outcomes. Through self-play alone, with no
 human game data, AlphaZero surpassed human-level play in chess, shogi, and Go.
-% Refer https://arxiv.org/pdf/1712.01815 here
+
 
 Leela Chess Zero replicates AlphaZero's architecture and training methodology as
 an open-source project, and is now competitive with Stockfish at top-level play.
 The broader impact of AlphaZero's approach has been a shift toward neural
 network architectures and self-play training in chess engine research.
-% Refer https://arxiv.org/pdf/2406.00877 here
 
-% TODO: Write more - expand on specific architectural details (residual blocks, number of filters) and how Leela Chess Zero's distributed training differs from AlphaZero's
 
-\section{Supervised Learning Approaches}
-% DeepChess [David et al., 2017]
-% Giraffe [Lai, 2015]
-% Learning from human games vs. self-play
+
+
+Supervised Learning Approaches
+
+
+
 
 DeepChess uses a two-stage deep neural network: a Pos2Vec autoencoder
 pre-trained unsupervised on 640K human games from the CCRL database, followed by
@@ -74,130 +74,130 @@ a supervised comparison network that takes two positions as input and outputs
 which is more favourable. The system never assigns numerical evaluations; it
 directly learns to rank positions, reaching grandmaster-level play with no
 hand-crafted heuristics.
-% Refer https://arxiv.org/pdf/1711.09667 here
+
 
 Giraffe trains a neural network evaluation function using temporal-difference
 learning via self-play, with minimal hand-crafted input features. Despite
 receiving no explicit human chess knowledge, the resulting engine plays at
-approximately FIDE International Master level (top 2.2\% of rated players),
+approximately FIDE International Master level (top 2.2% of rated players),
 comparable to the strongest handcrafted engines of the time. The key difference
 from DeepChess is that Giraffe uses self-play rather than human game databases,
 and TD-learning rather than supervised pairwise classification.
-% Refer https://arxiv.org/pdf/1509.01549 here
-% Refer https://arxiv.org/pdf/2409.20553v1 here for Maia v2
 
-% TODO: Write more - discuss the tradeoffs between supervised learning from human games vs. self-play (data quality, coverage of edge cases, computational cost)
 
-\section{Recent Innovations}
-% Graph representations [Tomas Rigaux & Hisashi Kashima, 2024]
-% Explainable AI in chess [Svendsen & Tørresen, 2022]
-% Hybrid approaches
+
+
+
+Recent Innovations
+
+
+
 
 Graph representations of chess positions attempt to capture the relational
 structure of the game more directly than grid-based encodings. Rigaux and
 Kashima (2024) proposed a graph-based neural network architecture that models
 interactions between pieces and their board positions, reporting improved
 evaluation accuracy and strategic understanding over grid baselines.
-% Refer https://arxiv.org/pdf/2410.23753 here
-% Refer https://theses.liacs.nl/pdf/2022-2023-AlwerSaleh.pdf here
+
+
 
 Explainable AI (XAI) in chess is a newer research direction. Svendsen and
-T{\o}rresen (2022) developed methods to visualise the influence of individual
+Torresen (2022) developed methods to visualise the influence of individual
 pieces and moves on engine evaluations, making the decision-making process of
 chess engines more transparent to both players and researchers.
-% Refer https://arxiv.org/pdf/2211.05500 here
-% Refer https://arxiv.org/pdf/2406.00877 here (Leela Chess Interop)
-
-% TODO: Write more - add a paragraph on hybrid approaches (e.g., NNUE as a hybrid of handcrafted features and neural evaluation) and how they relate to the graph/XAI work
 
 
-\section{Game AI Frameworks}
-% Python-chess library
-% Related frameworks
+
+
+
+
+Game AI Frameworks
+
+
 
 The python-chess library provides move generation and validation, PGN parsing
 and writing, Polyglot opening book reading, Syzygy/Gaviota tablebase probing,
 and full UCI/XBoard engine communication. It is the standard Python interface
 for working with chess engines programmatically.
-% Refer https://python-chess.readthedocs.io/en/latest/ here
-% Refer https://www.chessprogramming.org/UCI here
-
-% TODO: Write more - mention other relevant frameworks (e.g., Fairy-Stockfish, OpenSpiel) and compare their scope to python-chess
 
 
-\section{Web-Based Chess Platforms}
-\subsection{Existing Interactive Chess Platforms}
-% Lichess, Chess.com bot arenas
-% Browser-based game interfaces
+
+
+
+
+Web-Based Chess Platforms
+Existing Interactive Chess Platforms
+
+
 
 Lichess, developed by Thibault Duplessis, is an open-source chess server
 written in Scala/Play with an asynchronous architecture using Akka actors,
 MongoDB for game storage (800M+ games), Elasticsearch indexing, and nginx
 proxying both HTTP and WebSocket connections. Real-time move streaming is
 handled via WebSockets.
-% Refer https://github.com/lichess-org/lila here
 
-\subsection{Bot-vs-Bot Comparison Platforms}
-% Existing tools for pitting AI agents against each other
-% Spectator and analysis features
+
+Bot-vs-Bot Comparison Platforms
+
+
 
 The Top Chess Engine Championship (TCEC) is the most prominent example of a
 spectator-oriented bot-arena platform. The Chessprogramming Wiki documents TCEC's
 format and various tournament manager implementations.
-% Refer https://www.chessprogramming.org/TCEC here
 
-% TODO: Write more - describe TCEC's spectator features (live commentary, eval graphs, opening book selection) in more detail to motivate your own platform's design
 
-\subsection{Human-vs-Bot Interfaces}
-% Existing platforms allowing users to play against AI
-% UX considerations for interactive play
+
+
+Human-vs-Bot Interfaces
+
+
 
 The Lichess Board API endpoints (boardGameStream, boardGameMove) are the
 reference implementation for streaming live moves between a bot and a human
 player in real time, using REST with NDJSON streaming.
-% Refer https://github.com/lichess-org/api/blob/master/doc/specs/lichess-api.yaml here
 
-% TODO: Write more - discuss UX considerations for human-vs-bot play (think time display, move hints, difficulty adjustment)
 
-\subsection{Web Technologies for Real-Time Games}
-% WebSockets, server-side game orchestration
-% Frontend frameworks for board rendering
+
+
+Web Technologies for Real-Time Games
+
+
 
 The WebSocket Protocol (IETF RFC 6455, 2011) is the standard for
 full-duplex communication over a single TCP connection, and is the protocol
 underlying the game communication layer in this project.
-% Refer https://tools.ietf.org/html/rfc6455 here
+
 
 The choice of Go and Svelte for the backend and frontend respectively is
 uncommon in game development but well-suited to this project. Go's concurrency
 model handles multiple simultaneous games and real-time interactions naturally,
 while Svelte's reactive framework provides efficient UI updates with minimal
 overhead.
-% Refer https://svelte.dev/ here
-% Refer https://go.dev/ here
 
-% TODO: Write more - justify the Go+Svelte choice more concretely (e.g., compare goroutine overhead to Node.js event loop, or Svelte bundle size to React)
 
-\section{Critical Analysis}
-% Strengths and weaknesses of each approach
-% Gaps in current research
-% How your project builds on/differs from existing work
+
+
+
+Critical Analysis
+
+
+
 
 Three architectural families dominate current chess AI research: CNNs,
 transformers, and graph neural networks. Each has distinct strengths and
 weaknesses that motivate the comparative approach taken in this project.
 
 Krieg et al. (2024) confirm that CNNs remain competitive in hybrid NNUE +
-$\alpha$-$\beta$ deployments and are the most computationally efficient at
-inference time. However, CNNs have a structural limitation: a 3$\times$3 kernel
+- deployments and are the most computationally efficient at
+inference time. However, CNNs have a structural limitation: a 33 kernel
 sees only adjacent squares, so many stacked layers are needed to propagate
 information across the board. This is a poor match for chess, where a single
 piece (e.g., a rook or queen) influences the entire board instantly.
-% Refer https://ml-research.github.io/papers/krieg2024exploring.pdf here
-% Refer https://arxiv.org/pdf/2410.23753v1 here
+
+
 
 Transformers address this receptive field problem through global self-attention.
-Chessformer (CF-240M) achieves 2347 Elo and 93.5\% puzzle accuracy at 30$\times$
+Chessformer (CF-240M) achieves 2347 Elo and 93.5% puzzle accuracy at 30
 fewer FLOPs than comparable AlphaZero-scale models. The critical finding from
 Keller and Loepfe (2024) is that positional encoding is the decisive design
 choice: absolute, relative, and dynamic (Shaw et al.) encodings produce
@@ -206,7 +206,7 @@ tokens, while manageable, is costly at scale compared to CNN inference, and
 transformers require careful positional encoding since absolute embeddings fail
 to capture board geometry and naive relative encodings lose piece-type
 information.
-% Refer https://arxiv.org/pdf/2409.12272v1 here
+
 
 Ruoss et al. (2024) train a large transformer on 10 million Lichess games
 annotated with Stockfish 16 at 50ms per position. This is architecturally the
@@ -215,23 +215,23 @@ state-value heads and the tradeoffs between square-based and piece-based
 tokenisation strategies. The critical gap is that Ruoss et al. evaluate a single
 architecture; this project systematically compares Square and Piece Transformers
 under identical conditions.
-% Refer https://arxiv.org/pdf/2402.04494 here
-% Refer https://arxiv.org/pdf/2409.12272v1 here
+
+
 
 Graph neural networks offer a third alternative. AlphaGateau (GAT + GATEAU
 edge-feature layer) outperforms ResNet-based AlphaZero by an order of magnitude
-in sample efficiency on a 5$\times$5 chess variant, showing that graph
+in sample efficiency on a 55 chess variant, showing that graph
 representations encode relational structure (legal moves as edges) that grids
-cannot express compactly. Yet Rigaux and Kashima train only on a 5$\times$5
-variant and fine-tune to 8$\times$8; no published work presents a full GCN/GAT
+cannot express compactly. Yet Rigaux and Kashima train only on a 55
+variant and fine-tune to 88; no published work presents a full GCN/GAT
 chess engine trained end-to-end on standard chess from scratch against CNN and
 Transformer baselines on the same dataset. This is the most direct gap this
 project fills.
-% Refer https://arxiv.org/abs/2410.23753 here
-% Refer https://arxiv.org/pdf/2410.23753 here
 
-\section{Summary}
-% Key insights informing your methodology
+
+
+Summary
+
 
 Two findings from the literature directly shape the methodology of this project.
 First, representation matters more than depth. Chessformer shows that positional
@@ -242,8 +242,8 @@ empirical test of this claim. Second, supervised Stockfish annotation is a viabl
 and scalable training signal: Ruoss et al., Molinelli et al., and Oshri and
 Khandwala all validate this pipeline, but none investigate PV unrolling for
 position diversity.
-% Refer https://arxiv.org/pdf/2410.23753 here
-% Refer https://arxiv.org/pdf/2402.04494 here
+
+
 
 The central gap in the existing literature is the absence of a fair
 cross-architecture benchmark. Every existing paper evaluates one architecture in

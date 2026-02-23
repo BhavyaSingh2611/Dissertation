@@ -1,0 +1,177 @@
+Methodology and Design
+
+Requirements Analysis
+
+The framework must support a fair, controlled comparison of deep learning architectures for search-less chess. The following requirements guided its design.
+
+Functional Requirements
+enumerate
+    The framework must support training and inference across at least three neural network families-CNNs, Transformers, and GNNs-under identical data and evaluation conditions.
+    Any backbone (e.g., ResNet, GAT) must be composable with any output head (Policy, Value, or Dual) without code duplication.
+    The system must ingest engine-annotated positions from Parquet files and train models using both hard and soft policy labels alongside centipawn-derived value targets.
+    A multi-stage data preparation pipeline must handle over one billion positions, including deduplication, PV line unrolling, tablebase enrichment, and offline pre-encoding into binary shards.
+    An automated benchmarking pipeline must pit trained models against Stockfish at configurable depths, recording per-move evaluations and exporting PGN files for post-hoc analysis.
+    A common agent interface must allow any model, engine, or random baseline to participate in games interchangeably.
+enumerate
+
+Non-Functional Requirements
+enumerate
+    Training must use mixed-precision arithmetic (float16) and torch.compile where applicable to maximise GPU throughput.
+    The data pipeline must stream from disk one row-group at a time, bounding peak RAM usage regardless of dataset size.
+    Each subsystem (encoders, models, training loops, agents) must reside in its own package with clearly defined interfaces, so that it can be developed and tested independently.
+    All hyperparameters must be specified in a single YAML configuration file, and training checkpoints must be restorable for exact experiment replay.
+    Adding a new backbone or encoder should require implementing a single abstract class without modifying existing training or evaluation code.
+enumerate
+
+Framework Architecture
+
+The framework is organised into five principal modules, each responsible for a distinct concern.
+
+Chess Environment Module
+
+The chess environment module wraps the python-chess library to provide board management and move encoding. A BoardWrapper class exposes properties for legal moves, game-over detection, and piece queries. A statically generated lookup table maps every possible UCI move string (including promotions) to a unique integer index; this table contains 4544 entries and serves as the universal action space for all policy heads.
+
+Three specialised state encoders translate a chess.Board object into the tensor format each architecture family expects:
+itemize
+    CNNEncoder: In its initial form, the encoder produces an  tensor with 12 bitboard planes (six piece types per colour), four constant planes for castling rights, one plane for the en passant square, and one plane encoding the side to move as  (White) or  (Black). The board is always encoded from the current player's perspective-ranks and files are flipped when Black is to move. This encoder was later extended with tactical feature planes and material imbalance channels (Section sec:enhanced_encoder).
+    GNNEncoder: Constructs a graph with 64 nodes, one per square. Each node carries a 14-dimensional feature vector: a 13-element one-hot piece identifier and a colour scalar. Edges come from two sources-physical adjacency (King move patterns) and tactical relations (board.attackers)-and carry three-dimensional attributes: normalised Manhattan distance, a binary ray-tracing flag for unblocked lines of influence, and a binary legality flag. Reverse edges are added to preserve structural symmetry while keeping directional legality features intact.
+    TransformerEncoder: Supports two tokenisation schemes. The SquareTokenizer emits a fixed-length sequence of 64 tokens (one per square) with a 13-class vocabulary (empty plus twelve piece types), normalised rank/file coordinates, and full attention. The PieceTokenizer emits a variable-length sequence of up to 32 tokens (one per piece), ordered by colour (current player's pieces first), with each token carrying its piece type and square position. Padding masks prevent empty slots from contributing to attention.
+itemize
+
+All three encoders inherit from an abstract StateEncoder base class that mandates encode(), getinputshape(), and name methods. The factory layer uses these to select the correct encoder at runtime based on the chosen backbone.
+
+
+
+AI Agent Module
+
+The agent module defines a common interface through the abstract ChessAgent class, which requires every agent to implement getmove(board, timelimit) and a name property. Four concrete agents are provided:
+
+itemize
+    RandomAgent: Selects uniformly at random from the legal move set and serves as the lower-bound baseline.
+    LearningAgent: Wraps any trained ChessModel and its corresponding encoder. At inference time it encodes the board, runs a forward pass, masks illegal moves by setting their logits to , and picks the move via greedy argmax or temperature-controlled sampling with optional top- filtering.
+    MCTSAgent: Implements AlphaZero-style Monte Carlo Tree Search. Each node stores visit counts, cumulative value, and a prior probability from the policy network. Selection follows the PUCT formula . Leaf nodes are evaluated by the value head, and values are back-propagated with sign flips to account for alternating perspectives. Dirichlet noise (, ) can be added at the root for exploration during self-play data generation.
+    UCIAgent: Communicates with any UCI-compatible engine (e.g., Stockfish) via python-chess's engine protocol. It supports configurable depth, time limits, skill levels, and MultiPV analysis for obtaining centipawn-scored move distributions.
+itemize
+
+Training and Evaluation Engine
+
+The training subsystem centres on the Trainer class, which orchestrates the supervised training loop.
+
+A loss factory selects the appropriate loss function based on the head type. PolicyLoss computes KL divergence against soft label distributions or cross-entropy against hard labels with optional label smoothing. ValueLoss uses mean squared error between the predicted tanh-bounded value and the target. DualLoss combines both with configurable weights. The trainer wraps the forward pass in torch.autocast (float16 on CUDA/MPS) and applies GradScaler on CUDA to avoid underflow in low-precision gradients. Non-GNN backbones are passed through torch.compile for graph-level kernel fusion and optimised execution.
+
+Two learning rate schedules are supported-cosine annealing and step decay-both configured via YAML. Model weights, optimiser state, scheduler state, epoch counter, and best validation loss are serialised to disk after every epoch. Intermediate checkpoints are pruned to keep only every fifth epoch, the best, and the final model.
+
+As training progressed, the initial streaming Parquet pipeline was superseded by a multi-stage offline data preparation system designed for over one billion positions. This pipeline is described in Section sec:data_pipeline_evolution.
+
+
+
+Design Decisions and Justification
+
+Choice of Python and PyTorch
+Python was selected for its dominance in the machine learning ecosystem and the maturity of supporting libraries (python-chess, pyarrow, torchgeometric). PyTorch was preferred over TensorFlow for its eager-mode debugging, first-class support for dynamic computation graphs (essential for the variable-length PieceTransformer and graph-structured GNN inputs), and its torch.compile JIT pathway for production-grade throughput.
+
+
+
+Backbone-Head Decoupling
+Backbone feature extraction is deliberately separated from task-specific output heads. Every backbone subclasses ChessModel and implements forwardbackbone() to produce a fixed-dimension feature vector; the sethead() method then attaches one of three interchangeable heads. This decoupling yields  valid backbone-head combinations from six backbone and three head implementations, without combinatorial code explosion. More importantly, it means the only variable when comparing architectures is the backbone itself-the output layer, loss function, and training loop stay identical.
+
+Streaming Data Pipeline
+The dataset is stored in Apache Parquet format, which supports columnar compression and row-group-level random access. The ChessDataset class, implemented as a PyTorch IterableDataset, reads one row-group at a time and shuffles within each group. Peak memory is therefore bounded to the size of a single row-group (typically 64-128MB), regardless of total dataset size-critical when scaling to hundreds of millions of positions. Multi-worker data loading is supported by partitioning row-groups across workers using their workerid.
+
+Move Encoding
+Rather than the  spatial policy planes used by AlphaZero, a flat vector of 4544 logits is used. Each index corresponds to a unique UCI move string, generated exhaustively from all valid (fromsquare, tosquare, promotion) tuples. This representation is architecture-agnostic: the same policy head attaches to CNNs, Transformers, and GNNs without modification. The trade-off is the loss of spatial locality in the policy output, which the flat head compensates for with a hidden layer.
+
+Dual-Headed AlphaZero-Style Architecture
+The default configuration uses a dual-headed model that jointly predicts the policy distribution and the board evaluation from shared backbone features. This follows the AlphaZero paradigm: the value head provides a training signal for the backbone to learn positional understanding, while the policy head learns tactical move selection. The combined loss  is weighted equally by default ().
+
+Enhanced Encoder Design
+sec:enhanced_encoder
+
+After initial experiments with the base 18-channel CNN encoder, the encoder was extended with explicit tactical feature planes and material imbalance channels. The goal was to inject domain knowledge that the model would otherwise need to discover from raw piece positions alone.
+
+The following  tactical planes were added. Four attack/defence maps give per-square counts of attackers and defenders for each side, normalised by the maximum count; these make piece safety immediately visible to the first convolutional layer. Two mobility planes record the number of legal moves available to each piece, broadcast to its square, encoding piece activity without requiring the model to trace move generation logic. A single pin detection plane carries binary flags for pieces absolutely pinned to their King. Two King safety planes hold heuristic scores for each side's King based on pawn shield integrity and open files near the King.
+
+
+
+Five material imbalance planes round out the extension. Rather than encoding material as a single scalar difference, five constant  planes encode the per-piece-type count difference (our count minus their count) for Pawns, Knights, Bishops, Rooks, and Queens independently. This lets the model distinguish strategically different configurations-two Knights versus a Rook, for instance-that a scalar sum would conflate.
+
+The extended encoder thus produces a  tensor (18 base + 9 tactical + 5 material), with the additional channels computed directly from the python-chess board state.
+
+Spatial Policy Head
+
+The initial policy head applied global average pooling to the backbone's spatial feature maps before projecting to the 4544-move logit vector. This discards square-level information critical for move selection-which piece on which square should move where. The spatial policy head replaces global average pooling with a  convolution that reduces the channel dimension, followed by a flatten operation that preserves the  spatial grid. The resulting  representation is then projected to move logits via a linear layer, letting the network associate specific board locations with specific moves.
+
+Squeeze-and-Excitation Blocks
+
+Squeeze-and-Excitation (SE) blocks were added to the ResNet backbone's residual blocks. Each SE block applies global average pooling to "squeeze" the spatial dimensions into a channel descriptor, passes it through a two-layer fully connected bottleneck with ReLU activation, and uses the resulting channel weights to "excite" (scale) the original feature maps via element-wise multiplication. This channel attention mechanism lets the ResNet dynamically prioritise different feature channels depending on the position-emphasising pawn structure planes in endgames, for example, and King safety planes in middlegames. The SE blocks sit inside the residual blocks so that skip connections maintain gradient stability.
+
+Data Pipeline Evolution
+sec:data_pipeline_evolution
+
+The initial streaming Parquet pipeline worked well for prototyping but became a bottleneck at scale: runtime board encoding via python-chess was CPU-bound and could not saturate GPU training. A five-stage offline pipeline replaced it:
+
+enumerate
+    Deduplication (DuckDB): FEN strings are normalised (stripping move counters) and grouped using DuckDB's out-of-core SQL engine. When duplicate positions exist, the analysis with the highest depth or node count is retained.
+    PV Unrolling: For each base position, the first  moves of the principal variation are played out. Each intermediate position inherits the root evaluation (with sign flips for alternating sides), avoiding the cost of re-evaluating with Stockfish. Drift analysis confirmed that 96% of inherited evaluations remain within  centipawns of the true value.
+    Tablebase Enrichment: Positions with five or fewer pieces are probed against Syzygy tablebases using chess.syzygy.Tablebase. Hits replace engine evaluations with exact WDL (Win/Draw/Loss) values and the DTZ-optimal move as the policy target, giving mathematically perfect labels for the endgame.
+    Target Computation: Engine centipawn scores are converted to sparse top-20 policy distributions (stored as uint16 move indices and float16 scores) and normalised value targets (float16).
+    Binary Sharding: Processed positions are written into shards of 100K-500K positions in a compact binary format using packed bitboards (12 uint64 values + 2 metadata bytes per position, approximately 98 bytes each), which allows memory-mapped loading with zero deserialisation overhead.
+enumerate
+
+A cleanup pass filters positions with analysis depth  or zero node counts. Decisively won positions () and trivial mate-in-1/2 positions are downsampled to prevent value head bias, while the - centipawn range-where precise evaluation matters most-is upsampled.
+
+The resulting dataset occupies approximately 180-200GB for one billion positions. It loads via a torch.utils.data.Dataset (map-style) with true random shuffling, persistentworkers, and configurable prefetchfactor.
+
+
+
+Chess Implementation
+
+Chess rules are not reimplemented; the framework delegates all legality checking, move generation, and game-over detection to the python-chess library. The BoardWrapper class is a thin convenience layer over chess.Board, exposing properties such as legalmovesuci, ischeckmate, and halfmoveclock. This delegation keeps the codebase focused on machine learning concerns while relying on python-chess for correctness in edge cases like en passant, castling through check, under-promotion, and the fifty-move rule.
+
+Board representation is determined by the encoder (Section 3.2.1) rather than by a single canonical format. Each model family therefore receives the board in its most natural form: a spatial tensor for CNNs, a graph for GNNs, and a token sequence for Transformers.
+
+Web Platform Design
+
+Platform Requirements
+The web platform provides a browser-based interface for interacting with trained models. Its core requirements are:
+itemize
+    A user must be able to play a full game of chess against any trained model (Human-vs-Bot mode).
+    A user must be able to select two models and watch them play against each other in real time (Bot-vs-Bot mode).
+    The interface must support model selection from all available checkpoints, displaying metadata such as architecture type and parameter count.
+    Move updates must be streamed in real time with sub-second latency.
+itemize
+
+System Architecture
+The platform follows a client-server architecture. The backend is written in Go, chosen for its lightweight goroutine-based concurrency model, which maps naturally to managing multiple simultaneous games without thread-pool overhead. The frontend uses Svelte, a compile-time reactive framework that produces minimal JavaScript bundles and efficient DOM updates-well suited to the frequent, localised state changes involved in rendering a chess board.
+
+The frontend and backend communicate over WebSockets (RFC 6455) for bidirectional, low-latency move streaming. A REST API handles session management, model listing, and game creation; the WebSocket channel carries move events and clock updates during active games.
+
+Game Modes
+The platform supports two game modes. In Human-vs-Bot mode, the user makes moves through the board UI; each move is sent to the backend, which invokes the selected model's getmove method and streams the response back. In Bot-vs-Bot mode, the backend orchestrates alternating getmove calls between two selected models, broadcasting each move to connected spectators with a configurable delay for readability.
+
+User Interface Design
+The interface centres on an interactive chessboard rendered using an SVG-based board component. Move input is handled via drag-and-drop with legal-move highlighting. A side panel displays the move list in standard algebraic notation, a real-time evaluation bar (when a value head is available), and model selection controls. The design prioritises clarity over decoration, following conventions established by Lichess.
+
+Backend API Design
+The backend exposes the following core endpoints:
+itemize
+    GET /api/models - List available model checkpoints with metadata.
+    POST /api/games - Create a new game session, specifying mode and model(s).
+    WS /api/games/id/ws - WebSocket endpoint for real-time move streaming.
+    POST /api/games/id/move - Submit a human move (Human-vs-Bot mode).
+itemize
+The backend loads PyTorch models via a Python subprocess bridge, communicating board states and receiving moves over a local socket. This isolates the Python ML runtime from the Go HTTP server, preventing GIL contention from affecting WebSocket responsiveness.
+
+Technical Challenges
+
+Several technical challenges arose during design and were addressed through targeted engineering decisions.
+
+GNN inputs cannot be trivially stacked along a batch dimension because each graph has a variable number of edges. The collation function addresses this by offsetting edge indices by  for the -th graph in the batch and concatenating all edges into a single  tensor, with a batch vector mapping each node to its graph. This follows the PyTorch Geometric batching convention.
+
+The PieceTransformer presents a different batching problem: its sequences range from 1 to 32 tokens depending on the number of pieces on the board. A key-padding mask, constructed from the attentionmask field, prevents padded positions from influencing attention computation.
+
+Mixed-precision training required platform-specific handling. The MPS backend supports float16 autocast but not GradScaler. The trainer therefore enables the scaler only on CUDA devices while still using autocast on MPS for throughput gains.
+
+Finally, engine-annotated data provides centipawn scores for the top- moves, making soft policy labels possible via a softmax over normalised scores. These labels carry more information than a one-hot best-move label but require KL divergence rather than cross-entropy as the loss function. The pipeline supports both modes, selectable via configuration.
+
+

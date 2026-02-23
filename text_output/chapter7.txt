@@ -1,0 +1,71 @@
+Legal, Social, Ethical, and Professional Issues
+
+Ethical Considerations
+
+Research Ethics
+This project does not involve human participants, personal data collection, or experimentation on living subjects. Ethical approval was obtained through the University of Surrey's SAGE (Self-Assessment for Governance and Ethics) process, which confirmed that the project falls within the low-risk category. All training data comes from publicly available chess game databases and open-source engine evaluations.
+
+Responsible AI
+The models developed here are narrow AI systems designed exclusively for chess move prediction and position evaluation, so they pose no direct risk of harm. That said, transparency in AI decision-making still matters. The framework's evaluation pipeline (centipawn tracking, PGN export) provides full traceability of every move decision, and the soft policy labels expose the model's uncertainty across candidate moves. Most commercial chess engines return only their top move without a probability distribution, so this level of interpretability is unusually high for the domain.
+
+Bias in training data is worth noting: the Lichess Stockfish evaluation dataset reflects the engine's playing style and evaluation heuristics. Models trained on it will inherit Stockfish's strategic preferences - for instance, its material-focused evaluation - which may not represent alternative playing styles well. This is an acceptable limitation given that the project's goal is knowledge distillation from a strong engine, not modelling diverse human play.
+
+Legal Issues
+
+Intellectual Property
+The framework is original work for the University of Surrey Final Year Project and complies with the University's intellectual property policy. No proprietary code or datasets are used.
+
+Copyright and Licensing
+All third-party libraries are used in compliance with their respective open-source licences:
+itemize
+    python-chess: GPL-3.0 — permits use, modification, and distribution.
+    PyTorch: BSD-3-Clause — permissive licence with minimal restrictions.
+    PyTorch Geometric: MIT — permissive licence.
+    Stockfish: GPL-3.0 — used as an external binary for evaluation; the framework does not link against or modify its source code.
+    Lichess game data: Creative Commons CC0 — public domain, no restrictions on use.
+itemize
+
+The training dataset comes from Lichess's publicly available database, released under Creative Commons CC0 (public domain). The Stockfish evaluations annotating this data are produced by an open-source engine and carry no additional copyright restrictions.
+
+Social Issues
+
+Accessibility
+The framework is implemented in Python and uses well-documented libraries, so the barrier to entry is relatively low for anyone with basic Python experience. The YAML configuration system and command-line training scripts help with this. The main accessibility limitation is hardware: training requires a GPU for practical turnaround times, though the framework does run correctly on CPU.
+
+
+
+Web Platform Accessibility
+The planned web platform targets modern evergreen browsers (Chrome, Firefox, Safari, Edge) and is designed to be responsive across desktop and tablet screen sizes. The SVG-based board rendering ensures crisp display at any resolution. Keyboard accessibility for move input and ARIA labels for screen readers are planned but not yet implemented.
+
+
+
+Impact on Chess Community
+The project contributes to the growing body of open-source chess AI research. By providing a controlled multi-architecture comparison and an accessible web interface, it could serve as an educational resource for players curious about how neural networks evaluate positions. The models are not strong enough to be useful for cheating in competitive play, and the framework includes no mechanisms for real-time assistance during online games.
+
+Professional Issues
+
+Code of Conduct
+Development follows the BCS (British Computer Society) Code of Conduct. The framework is designed as an open educational and research tool, which satisfies the public interest obligation. The codebase follows standard software engineering practices - version control, automated testing, documentation, and modular design - in line with the professional competence requirement. All results, including negative results and known limitations, are reported honestly throughout this dissertation.
+
+Information Security
+The framework processes no personal data and stores no user credentials. On the web platform side, the backend API validates all inputs (FEN strings, move UCI strings) before processing, and no sensitive information such as API keys or passwords is hard-coded in the repository.
+
+Web Platform Security
+The planned web platform addresses common web vulnerabilities in a few ways. All FEN strings and UCI moves received from clients are validated against python-chess before execution, preventing malformed input from reaching the model. WebSocket connections use WSS (WebSocket Secure) in production deployments. Move submission endpoints are rate-limited to prevent denial-of-service via rapid move flooding.
+
+
+
+Sustainability
+
+Environmental Impact
+Neural network training is computationally intensive and carries a real carbon footprint. This project takes several steps to reduce that cost. Mixed-precision training halves the memory bandwidth and increases throughput by up to 2, cutting the wall-clock time and energy consumption of each training run. The streaming data loader avoids redundant I/O by reading each row-group exactly once per epoch, and checkpoint pruning reduces storage overhead by retaining only every fifth epoch.
+
+More fundamentally, search-less inference is the whole point of the project: a single forward pass consumes orders of magnitude less energy than the millions of node evaluations a searching engine performs. If the models were ever deployed at scale, this difference would matter considerably.
+
+
+
+UN Sustainable Development Goals
+The SDGs most relevant to this project are SDG 4 (Quality Education), SDG 9 (Industry, Innovation, and Infrastructure), and SDG 12 (Responsible Consumption and Production). The connection to education is the most direct: the web platform is designed to let players explore how different neural architectures evaluate the same position, which makes deep learning concepts tangible in a way that reading about tensor shapes does not. The cross-architecture comparison - CNN, Transformer, and GNN on identical data - is a contribution to AI research methodology (SDG 9), though a modest one; the real value is the controlled experimental setup rather than any single architectural breakthrough. The efficiency measures described above (mixed precision, search-less inference) are a small but genuine effort toward responsible resource use (SDG 12), particularly given how energy-intensive large-scale model training has become across the field.
+
+Summary
+This project uses open-source tools and public-domain data throughout, produces transparent outputs with full move traceability, processes no personal information, and takes concrete steps to reduce its computational footprint through mixed-precision training and search-less inference. The main ethical consideration - bias inherited from Stockfish's evaluation style - is documented and acceptable given the project's distillation goals. No significant legal, social, or ethical risks were identified.
