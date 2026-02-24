@@ -2,7 +2,7 @@
 
 \section{Achievement of Objectives}
 
-The primary objective of this project was to engineer and evaluate a suite of deep learning models capable of playing chess without search algorithms. The framework implements all six proposed architectures (ConvNet, ResNet, SquareTransformer, PieceTransformer, GCN, GAT), each trainable under identical data conditions with interchangeable output heads. The modular backbone--head design and the streaming data pipeline both exceed the original specification, which anticipated only three architectures.
+The primary objective of this project was to engineer and evaluate a suite of deep learning models capable of playing chess without search algorithms. The framework implements all six proposed architectures (ConvNet, ResNet, SquareTransformer, PieceTransformer, GCN, GAT), each trainable under identical data conditions with interchangeable output heads. The modular backbone — head design and the streaming data pipeline both exceed the original specification, which anticipated only three architectures.
 
 The secondary objectives of inference speed measurement and cross-architecture comparison are supported by the benchmarking pipeline, which records per-move timing and exports PGN files for qualitative analysis.
 
@@ -12,15 +12,15 @@ Beyond the initial architecture, the framework evolved during development. The C
 
 The abstract \texttt{ChessModel} interface made adding new architectures straightforward. Adding the GAT architecture, for instance, required implementing only a single class with two methods; the training loop, loss functions, and evaluation pipeline required zero modifications. This backbone--head decoupling justified the upfront design effort many times over.
 
-The row-group-level streaming from Parquet files allowed training on datasets larger than available RAM without any changes to the training loop. This mattered most when scaling from initial prototyping (100K positions) to full-scale runs (tens of millions of positions). Centralising all hyperparameters in a single YAML file eliminated hard-coded constants and made experiment management straightforward. Combined with checkpoint serialisation, any past experiment can be exactly reproduced.
+The row-group-level streaming from Parquet files enabled training on datasets larger than available RAM without changing the training loop. This mattered most when scaling from initial prototyping (100K positions) to full-scale runs (tens of millions of positions). Centralising all hyperparameters in a single YAML file eliminated hard-coded constants and made experiment management straightforward. Combined with checkpoint serialisation, any past experiment can be exactly reproduced.
 
-Using softmax distributions over the engine's top-$N$ move evaluations rather than one-hot best-move labels provided richer gradient information, especially for positions where multiple moves are nearly equally strong. The decision to inherit root evaluations (with sign flips) for PV-unrolled positions rather than re-evaluating each with Stockfish was both practical and accurate. The drift analysis showing 96\% of inherited values within $\pm 100$cp validated this approximation and enabled a large increase in training data diversity at negligible computational cost.
+Using softmax distributions over the engine's top-$N$ move evaluations rather than one-hot best-move labels provided richer gradient information, especially for positions where multiple moves are nearly equally strong. The decision to inherit root evaluations (with sign flips) for PV-unrolled positions rather than re-evaluating each with Stockfish was both practical and accurate. The drift analysis, showing 96\% of inherited values within $\pm 100$ cp, validated this approximation and enabled a large increase in training data diversity at negligible computational cost.
 
 Augmenting the CNN encoder with explicit attack/defence maps, mobility, and pin detection planes gave the model domain knowledge that would otherwise require many convolutional layers to infer. This had the most visible effect on the shallower ConvNet, where the limited receptive field makes it difficult to learn long-range piece interactions from raw bitboards alone. Finally, using mathematically perfect endgame labels from Syzygy tablebases for $\leq 5$-piece positions eliminated engine approximation error in the training signal for the endgame regime, and the inference-time bypass ensured flawless endgame play without any neural network involvement.
 
 \section{What Didn't Work Well}
 
-The GNN encoder is much slower than the CNN encoder because it must compute attack and defence relations for every square on every board. This makes the GNN data pipeline the bottleneck during training, despite the model itself being no larger than the CNN.
+The GNN encoder is much slower than the CNN encoder because it must compute attack and defence relations for every square on every board. This makes the GNN data pipeline the bottleneck during training, even though the model itself is no larger than the CNN.
 
 The original policy head used global average pooling, discarding spatial information critical for move prediction. This was identified early and replaced with a spatial policy head, but the initial training runs on the pooled representation produced noticeably weaker policy accuracy, confirming that square-level information is essential for move selection.
 
@@ -28,13 +28,13 @@ The original policy head used global average pooling, discarding spatial informa
 
 \section{Lessons Learned}
 
-Filtering out low-depth evaluations and balancing the value distribution had a larger impact on model performance than simply increasing dataset size. Data quality consistently mattered more than data quantity.
+Filtering out low-depth evaluations and balancing the value distribution had a larger impact on model performance than simply increasing the dataset size. Data quality consistently mattered more than data quantity.
 
-The choice of board representation (spatial tensor vs.\ graph vs.\ token sequence) determines what information is accessible to the model and what must be learned from scratch. Encoder design turned out to be as consequential as model architecture.
+The choice of board representation (spatial tensor vs \ graph vs \ token sequence) determines what information is accessible to the model and what must be learned from scratch. Encoder design proved as consequential as model architecture.
 
 The ConvNet, despite being the simplest model, served as an invaluable debugging tool. Once the ConvNet was training correctly, issues in more complex architectures (Transformer attention masks, GNN edge batching) could be diagnosed by comparison. Starting with the simplest architecture saved a lot of time.
 
-Mixed-precision training requires platform-specific handling. The asymmetry between CUDA and MPS support for \texttt{GradScaler} required conditional logic that was non-obvious and initially caused silent numerical instability.
+Mixed-precision training requires platform-specific handling. The asymmetry between CUDA and MPS support for \texttt{GradScaler} required non-obvious conditional logic that initially caused silent numerical instability.
 
 \section{Personal Reflection}
 
@@ -54,11 +54,11 @@ The framework currently relies entirely on supervised learning from engine-annot
 
 \subsection{Web Platform}
 
-The planned Go/Svelte web platform would provide a browser-based interface for interacting with trained models. Users could play against any trained model via a drag-and-drop board interface with real-time move streaming over WebSockets. Two models could play each other with spectator support, configurable move delay, and live evaluation bars. A round-robin tournament system where all trained models play against each other, with automated Elo calculation from the results, would allow systematic strength comparison. An analysis board mode for setting up arbitrary positions and comparing move recommendations of different models side by side is also planned.
+The planned Go/Svelte web platform would provide a browser-based interface for interacting with trained models. Users could play against any trained model via a drag-and-drop board interface with real-time move streaming over WebSockets. Two models could play each other with spectator support, configurable move delay, and live evaluation bars. A round-robin tournament system in which all trained models play against each other, with automated Elo ratings calculated from the results, would allow systematic strength comparisons. An analysis board mode for setting up arbitrary positions and comparing move recommendations of different models side by side is also planned.
 
 \subsection{Long-term Research Directions}
 
-Framing chess as a sequence prediction task, analogous to language modelling, where the model autoregressively predicts move continuations from a history of board states is one direction I find interesting. This Decision Transformer-style approach could enable genuine multi-move planning without explicit search. The backbone--head architecture is also game-agnostic, so adapting the framework to other perfect-information games (e.g., Shogi, Othello) would test the generality of the design. Extending the tablebase integration to 6- and 7-piece counts (at the cost of much more storage) would expand the range of positions with perfect play.
+Framing chess as a sequence prediction task, analogous to language modelling, where the model autoregressively predicts move continuations from a history of board states, is one direction I find interesting. This Decision Transformer-style approach could enable genuine multi-move planning without explicit search. The backbone--head architecture is also game-agnostic, so adapting the framework to other perfect-information games (e.g., Shogi, Othello) would test the generality of the design. Extending the tablebase integration to 6- and 7-piece counts (at the cost of much more storage) would expand the range of positions with perfect play.
 
 % TODO: Write more - are there specific papers or ideas that motivate these directions? Which would you prioritise and why?
 

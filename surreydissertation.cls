@@ -19,11 +19,7 @@
 \RequirePackage{graphicx}
 \RequirePackage{subfigure}
 \RequirePackage{hyperref}
-\RequirePackage{harvard}
 \RequirePackage[centertags,reqno]{amsmath}
-
-% Fix for harvard package use with MikTeX and LyX
-\renewcommand{\harvardurl}{URL: \url}
 
 % Layout settings
 
