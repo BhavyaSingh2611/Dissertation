@@ -66,7 +66,7 @@ Giraffe \cite{deep_learning_game_ai} trains a neural network evaluation function
 % Explainable AI in chess [Svendsen & Tørresen, 2022]
 % Mixed approaches
 
-Graph representations of chess positions \cite{gnn_chess} \cite{gnn_chess_modelling} aim to capture the game's relational structure more directly than grid-based encodings. Rigaux and Kashima (2024) proposed a graph-based neural network architecture that models interactions between pieces and their board positions, achieving improved evaluation accuracy and strategic insight compared to grid baselines.
+Graph representations of chess positions \cite{gnn_chess} \cite{gnn_chess_modelling} aim to capture the game's relational structure more directly than grid-based encodings. Rigaux and Kashima (2024) \cite{gnn_chess} proposed a graph-based neural network architecture that models interactions between pieces and their board positions, achieving improved evaluation accuracy and strategic insight compared to grid baselines.
 % Refer https://arxiv.org/pdf/2410.23753 here
 % Refer https://theses.liacs.nl/pdf/2022-2023-AlwerSaleh.pdf here
 
@@ -75,6 +75,10 @@ Explainable AI (XAI) \cite{xai_chess} \cite{look_ahead_chess_nn} in chess is a n
 % Refer https://arxiv.org/pdf/2406.00877 here (Leela Chess Interop)
 
 % TODO: Write more - add a paragraph on mixed approaches (e.g., NNUE as a hybrid of handcrafted features and neural evaluation) and how they relate to the graph/XAI work
+AlphaGateau paper \cite{gnn_chess} demonstrates that while using fewer parameters and compute time compared to AlphaZero thy were able to reach an ELO of 2105 ± 42 with just 131k total frames which were derived from 256 games, which when compared to a similarly sized AlphaZero model with 5 layers was only able to achieve an ELO of 667 ± 38 in 5x5 chess. Finetuning the AlphaGateau model on 8x8 chess improves the accuracy from 807 ± 46 to 1876 ± 47, which suggests that it was able to learn general chess rules from 5x5 and apply them to 8x8 with some success.
+
+In the paper learned look-ahead in a chess playing neural network \cite{look_ahead_chess_nn}, they were able to demonstrate that neural networks learn to look ahead, which helps them achieve higher ELO numbers despite not having the ability to use tree based search methods, which was later also shown by Google DeepMind team with their searchless chess paper \cite{searchless_chess}.
+
 
 \section{Game AI Frameworks}
 % Python-chess library
@@ -147,6 +151,8 @@ Graph neural networks offer a third alternative. AlphaGateau \cite{gnn_chess} (G
 % Key insights informing your methodology
 
 Two findings from the literature directly shape the methodology of this project. First, representation matters more than depth. Chessformer \cite{chessformer} shows that positional encoding is the decisive variable for transformers, while Rigaux and Kashima \cite{gnn_chess} show that graph edges (encoding legal moves) capture the relational structure that grid-based representations miss. A multi-architecture comparison is the natural empirical test of this claim. Second, supervised Stockfish annotation is a viable and scalable training signal: Chessformer, Searchless Chess \cite{searchless_chess} all validate this pipeline, but none investigate PV unrolling for position diversity.
+
+The main reason to use three architectures is that chess is a complex domain with multiple interacting patterns. CNNs are good at local spatial patterns, transformers excel at long-range dependencies, and GNNs capture relational structure. By comparing all three on the same dataset and evaluation benchmarks, we can identify which architectue is most effective for search-less chess.
 % Refer https://arxiv.org/pdf/2410.23753 here
 % Refer https://arxiv.org/pdf/2402.04494 here
 

@@ -51,8 +51,7 @@ We acknowledge that without search, our models could struggle with "horizon effe
 The main goal is to engineer and evaluate deep learning models (CNN, Transformer, GNN) capable of achieving a 2000 ELO rating without search algorithms. Success is measured by:
 
 \begin{enumerate}
-    \item Inference speed: whether the models show a meaningful reduction in move generation time versus traditional engines.
-    \item Generalisation: whether the models have ``learned'' chess principles rather than memorised positions, verified via performance on an unseen puzzle set.
+    \item Generalisation: whether the models have ``learned'' chess principles rather than memorised positions, verified via performance on an unseen puzzle set which have an ELO rating attached to it by solving a certain number of puzzles and fitting a curve on the puzzle solve percentage, we can estimate the ELO of the model on the puzzles.
     \item Architectural comparison: which architecture (spatial, relational, or sequential) is best suited for the geometry of chess.
 \end{enumerate}
 
