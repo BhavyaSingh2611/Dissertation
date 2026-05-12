@@ -9,12 +9,14 @@ Current state-of-the-art engines are strong, but they are also ``computationally
 % TODO: Write more - add a concrete example of latency or resource usage that illustrates this barrier (e.g., Leela's GPU requirements, Stockfish thread counts)
 
 This project pursues ``Search-less Chess.'' By training Convolutional Neural Networks (CNNs), Transformers, and Graph Neural Networks (GNNs), we investigate whether a model can develop a ``grandmaster's intuition,'' the ability to look at a board and immediately identify the best move without a search algorithm. Removing the search would reduce move latency and could reveal how machine learning architectures internalise spatial and strategic relationships.
+% [figure] Comparison schematic: search-based engine pipeline vs search-less inference pipeline (latency and compute stages).
 
 \section{The Challenge of Chess}
 Chess is a game of perfect information, yet it remains computationally "unsolved" because of its strategic depth. A player must balance tactical immediate threats (checks, captures) with abstract long-term goals (piece mobility, pawn structure, and king safety).
 
 \subsection{Computational Complexity}
 The complexity of chess is often illustrated by Shannon's Number, which estimates the game tree complexity at approximately \(10^{120}\). Even the state space, the number of possible legal positions, is estimated at \(10^{40}\).
+% [figure] Log-scale bar chart comparing state space size, game-tree size, and feasible search budgets.
 Because the number of possible variations grows exponentially with every half-move (ply), brute-force calculation is physically impossible. This requires an approach that either prunes the search space or, as we propose, bypasses it entirely through high-fidelity policy prediction.
 
 \subsection{Failure of Naive Approaches}
@@ -38,6 +40,7 @@ We train these models on the Lichess Stockfish dataset, effectively distilling t
 
 \subsection{Comparison Methodology}
 To validate our approach, we benchmark our models against Stockfish at varying ``depth'' constraints. This lets us simulate different ELO ranges and see where a search-less model begins to falter compared to a searching engine. We also use the Lichess Puzzle dataset to test the models on specific tactical motifs, providing a granular view of their ``chess IQ'' in areas such as forks, pins, and endgame transitions.
+% [figure] Evaluation overview: Stockfish depth ladder and puzzle categories used for benchmarking.
 
 \section{Summary of Key Results}
 % [TODO: To be completed following the experimental phase.]

@@ -2,7 +2,8 @@
 
 \section{Development Environment and Tools}
 
-The framework is implemented in Python 3.10 with PyTorch as the deep learning backend. Table~\ref{tab:libraries} summarises the principal libraries and their roles.
+The framework is implemented in Python 3.10 with PyTorch as the deep learning backend. Table~\ref{tab:libraries} lists the principal libraries and what they do.
+% [figure] Overview diagram of software stack and tooling used in development.
 
 \begin{table}[h]
 \centering
@@ -22,15 +23,16 @@ PyArrow & Parquet file I/O for the training dataset \\
 NumPy / Pandas & Numerical operations and data analysis \\
 Matplotlib & Evaluation flow charts and training curve visualisation \\
 PyYAML & Configuration file parsing \\
-tqdm & Progress bars for training and data generation \\
+tqdm & Progress bars for training \\
+pydantic-settings & Parsing of config yaml \\
 \hline
 
 \end{tabular}
 \end{table}
 
-All experiments ran on two hardware configurations: an Apple M-series workstation using the MPS (Metal Performance Shaders) backend for local development, and an NVIDIA GPU cluster (CUDA) for large-scale training. The codebase auto-detects the best available device at startup - preferring CUDA over MPS over CPU - and enables hardware-specific optimisations (TF32 math and cuDNN auto-tuning on CUDA; float16 autocast on MPS).
+All experiments ran on two hardware configurations: an Apple M-series workstation using the MPS (Metal Performance Shaders) backend for local development, and an NVIDIA GPU (CUDA) for main training. The codebase auto-detects the best available device at startup — preferring CUDA to MPS over CPU — and enables hardware-specific optimisations (TF32 math and cuDNN auto-tuning on CUDA).
 
-Version control uses Git. All hyperparameters live in a single YAML configuration file (\texttt{config/default.yaml}), parsed at runtime into a hierarchy of Python dataclasses (\texttt{Config}, \texttt{ModelConfig}, \texttt{TrainingConfig}, etc.), so every experiment is fully reproducible from its configuration snapshot.
+Version control uses Git. All hyperparameters live in a single YAML configuration file (\texttt{config/settings.yaml}), parsed at runtime into a hierarchy of Python dataclasses (\texttt{Config}, \texttt{ModelConfig}, \texttt{TrainingConfig}, etc.), so every experiment is fully reproducible from its configuration snapshot.
 
 \section{Core Framework Implementation}
 
@@ -40,14 +42,14 @@ The framework's extensibility rests on two abstract base classes:
 
 \begin{itemize}
     \item \texttt{ChessModel(ABC, nn.Module)}: Every neural network backbone subclasses this and implements \texttt{forward\_backbone(x)} (returning a fixed-dimension feature vector) and \texttt{get\_backbone\_output\_dim()}. The base class provides a concrete \texttt{forward(x)} that chains the backbone with whichever output head has been attached via \texttt{set\_head()}.
-    \item \texttt{StateEncoder(ABC)}: Every board encoder implements \texttt{encode(board)} and \texttt{get\_input\_shape()}. This contract lets the data pipeline and agents work with any encoder--model pairing without type-checking.
+    \item \texttt{StateEncoder(ABC)}: Every board encoder implements \texttt{encode(board)} and \texttt{get\_input\_shape()}. This lets the data pipeline and agents work with any encoder-model pairing without type-checking.
 \end{itemize}
 
 % TODO: Write more - discuss a concrete example of adding a new backbone, e.g. how many lines of code it takes and what the developer experience is like
 
 \subsection{Factory Pattern}
 
-The \texttt{create\_model(config)} factory reads the backbone name and head type from the configuration, instantiates the appropriate backbone with its architecture-specific parameters (e.g., number of residual blocks, number of attention heads), constructs the matching output head, and attaches it. A companion \texttt{get\_encoder\_for\_model(backbone)} factory maps backbone names to their corresponding encoder classes. This two-step factory keeps backbone--encoder pairings consistent.
+The \texttt{create\_model(config)} factory reads the backbone name and head type from the configuration, instantiates the appropriate backbone with its architecture-specific parameters (e.g., number of residual blocks, number of attention heads), constructs the matching output head, and attaches it. A companion \texttt{get\_encoder\_for\_model(backbone)} factory maps backbone names to their corresponding encoder classes. This two-step factory keeps backbone-encoder pairings consistent.
 
 \subsection{Configuration System}
 All tunable parameters are centralised in a YAML file and parsed into nested dataclasses:
@@ -58,7 +60,7 @@ All tunable parameters are centralised in a YAML file and parsed into nested dat
     \item \texttt{EngineConfig}: Path to the Stockfish binary and default search parameters.
 \end{itemize}
 
-A recursive \texttt{\_dict\_to\_dataclass()} helper converts arbitrarily nested YAML dictionaries into their corresponding dataclass instances, giving type safety and IDE auto-completion throughout the codebase.
+Pydantic-settings parses the yaml file and allows us to access the config options anywhere in the project.
 
 \section{Supervised Learning Model}
 
@@ -66,18 +68,17 @@ A recursive \texttt{\_dict\_to\_dataclass()} helper converts arbitrarily nested 
 
 Training data comes from the Lichess Stockfish evaluation dataset, which provides millions of positions annotated with engine analysis. The data is stored in Apache Parquet format for efficient columnar compression and row-group-level random access.
 
-The \texttt{ChessDataset} class, implemented as a PyTorch \texttt{IterableDataset}, supports two Parquet schemas:
+The \texttt{ChessDataset} class, implemented as a PyTorch \texttt{IterableDataset}, the following Parquet schema:
 
 \begin{enumerate}
-    \item \textbf{Engine-evaluated:} Each row contains a FEN string, the principal variation (PV) line in UCI notation, a centipawn evaluation, and an optional mate-in-$N$ score. The first move of the PV line is the best.
-    \item \textbf{Legacy multi-move:} Each row contains a FEN, the best move, the game result, and up to 20 alternative moves with their centipawn scores. This schema enables soft policy labels.
+    \item \textbf{PV-unrolled:} Each row contains a FEN string, the best move in UCI notation, a precomputed value. It is structured as f, b, v which was artifact of converting jsonl to parquet when doing the data-cleanup/preparation. Where the fen represents the current board state and the b is the best move from the board state and v is a value from +1 to -1 depending on the side that is currently winning.
 \end{enumerate}
 
-Data loading works in four steps. First, the dataset enumerates all row-groups across all Parquet files. These row-groups are then partitioned across DataLoader workers by worker ID. Within each worker, row-groups and rows are shuffled independently. Finally, each row is converted to a training example by encoding the board and building the policy and value targets.
+Data loading works in following steps. First, the dataset lists all row-groups across the Parquet file. These are partitioned across DataLoader workers by worker ID. Finally, each row is converted to a training example by encoding the board and building the policy and value targets.
 
-\textbf{Policy targets} are constructed in one of two modes. In \emph{soft label} mode, the centipawn scores of the top-$N$ moves are normalised by their absolute maximum, passed through a softmax, and scattered into a sparse 4544-dimensional vector. In \emph{hard label} mode, the best move receives a probability of 1.0.
+\textbf{Policy targets} are constructed in \emph{hard label} mode, the best move receives a probability of 1.0 whereas everything else is set to 0 in the super sparse 4544-dimensional vector.
 
-\textbf{Value targets} are derived from the strongest available signal: the game result ($+1$, $0$, $-1$), the mate score (mapped to $\pm 1$), or the centipawn evaluation (divided by 1000 and clamped to $[-1, 1]$). The value is always expressed from the current player's perspective.
+\textbf{Value targets} are taken from the dataset: the game result ($+1$, $0$, $-1$), the mate score (mapped to $\pm 1$), or the centipawn evaluation (divided by 1000 and clamped to $[-1, 1]$). The value is always expressed based on the colour that is winning.
 
 A custom \texttt{collate\_fn} batches examples into the format expected by each model family. CNN inputs are stacked along the batch dimension. Transformer inputs have each dictionary field (tokens, positions, masks) stacked independently. GNN inputs require more care: edge indices are concatenated with per-graph offsets of 64 nodes, and a \texttt{batch} vector maps each node to its originating graph, following the PyTorch Geometric batching convention.
 
@@ -86,20 +87,24 @@ A custom \texttt{collate\_fn} batches examples into the format expected by each 
 \subsection{Neural Network Architecture}
 
 Six backbone architectures are implemented, two per model family.
+% [figure] Backbone summary: CNN/Transformer/GNN family blocks with input/output dimensions.
 
 \subsubsection{Convolutional Neural Networks}
 
 \textbf{ConvNet} consists of six sequential convolutional blocks, each comprising a $3 \times 3$ convolution (with padding to preserve spatial dimensions), batch normalisation, and ReLU activation. The first block projects the 18-channel input to 256 channels; subsequent blocks maintain this width. A global average pooling layer reduces the $256 \times 8 \times 8$ feature maps to a 256-dimensional vector.
-\textbf{ResNet} begins with an initial $3 \times 3$ convolution that projects the input to 256 channels, followed by $N$ residual blocks (configurable to 6, 10, or 20). Each residual block contains two $3 \times 3$ convolutions with batch normalisation, and the input is added to the output via a skip connection before the final ReLU. Global average pooling produces the output vector. The skip connections stabilise training in deeper configurations by providing gradient shortcuts.
+
+\textbf{ResNet} begins with an initial $3 \times 3$ convolution that projects the input to 256 channels, followed by $N$ residual blocks (configurable to 6, 10, or 20). Each residual block contains two $3 \times 3$ convolutions with batch normalisation and a SE block, and the input is added to the output via a skip connection before the final SiLU. Global average pooling produces the output vector.
 
 \subsubsection{Transformers}
 
 \textbf{SquareTransformer} tokenises the board as 64 fixed tokens (one per square) using a vocabulary of 13 (empty + 12 piece types). Each token is embedded and summed with a learnable positional embedding and a coordinate projection (normalised rank-and-file). Side-to-move information is broadcast as a bias to all tokens, while castling rights are injected into a prepended CLS token. The sequence passes through $N$ Transformer encoder blocks, each using pre-LayerNorm, multi-head self-attention (8 heads), and a GELU-activated feed-forward network with a $4\times$ expansion ratio. The CLS token's final hidden state serves as the backbone output.
-\textbf{PieceTransformer} tokenises the board as a variable-length sequence of up to 32 tokens (one per piece). Each token encodes the piece type (vocabulary of 12) and its square position via separate embedding tables, plus a sequence-order embedding. A key-padding mask prevents attention from flowing to padded positions. The architecture otherwise duplicates the SquareTransformer, with a CLS token aggregating the sequence representation.
+
+\textbf{PieceTransformer} tokenises the board as a variable-length sequence of up to 32 tokens (one per piece). Each token encodes the piece type (vocabulary of 12) and its square position via separate embedding tables. A key-padding mask prevents attention from flowing to padded positions. A CLS token aggregates the sequence representation.
 
 \subsubsection{Graph Neural Networks}
 
 \textbf{GCN} projects the 14-dimensional node features to a hidden dimension of 256 via a linear layer, then applies $N$ GCN layers. Each layer performs a graph convolution (\texttt{GCNConv}), batch normalisation, and ReLU activation with a residual connection. Global mean pooling aggregates node embeddings into a single graph-level vector, which is summed with a side-to-move embedding and a castling projection before a final linear output layer.
+
 \textbf{GAT} follows the identical structure but replaces \texttt{GCNConv} with \texttt{GATConv}, which computes multi-head attention (4 heads) over neighbours. The GAT layers accept the 3-dimensional edge attributes (distance, ray-tracing, legality) via the \texttt{edge\_dim} parameter, allowing the attention mechanism to weight edges by their tactical significance. ELU activation replaces ReLU for smoother gradients in the attention computation.
 
 % TODO: Write more - discuss any training instabilities observed with GAT (e.g., attention collapse) and how edge attributes helped
@@ -111,7 +116,7 @@ Six backbone architectures are implemented, two per model family.
 Three loss modules are provided:
 
 \begin{itemize}
-    \item \textbf{PolicyLoss:} KL divergence for soft labels ($\mathcal{L}_{\text{KL}} = \sum_i t_i \log \frac{t_i}{p_i}$, where $t$ is the target distribution and $p = \text{softmax}(\text{logits})$) or cross-entropy for hard labels, with optional label smoothing.
+    \item \textbf{PolicyLoss:} Cross-entropy for hard labels, with optional label smoothing.
     \item \textbf{ValueLoss:} Mean squared error between the predicted value (tanh-bounded) and the target.
     \item \textbf{DualLoss:} Weighted sum $\mathcal{L} = \lambda_p \mathcal{L}_{\text{policy}} + \lambda_v \mathcal{L}_{\text{value}}$.
 \end{itemize}
@@ -122,7 +127,7 @@ Training uses the AdamW optimiser with a default learning rate of $10^{-3}$ and 
 
 \subsubsection{Mixed Precision and Compilation}
 
-On CUDA devices, training uses float16 autocast with \texttt{GradScaler} to maintain numerical stability. On MPS (Apple Silicon), autocast is enabled, but the scaler is disabled — MPS does not support it. Non-GNN backbones are wrapped with \texttt{torch.compile} for kernel fusion and operator-level optimisation. I found that GNN models had to be excluded from compilation because their dynamic graph structures prevent effective tracing.
+On CUDA devices, training uses float16 autocast with \texttt{GradScaler} to maintain numerical stability. On MPS (Apple Silicon), autocast is enabled but the scaler is disabled — MPS doesn't support it. Non-GNN backbones are wrapped with \texttt{torch.compile} for kernel fusion and operator-level optimisation. GNN models had to be excluded from compilation because their dynamic graph structures prevent effective tracing.
 
 \subsubsection{Checkpointing}
 
@@ -130,69 +135,35 @@ After each epoch, the trainer serialises the model state dict, the optimiser sta
 
 \section{Architectural Enhancements}
 
-After the initial implementation and early training runs, several architectural improvements were made to address weaknesses I observed.
-
-\subsection{Enhanced CNN Encoder}
-
-The base 18-channel encoder was extended to 32 channels. The 14 new planes are computed from the \texttt{python-chess} board state at encoding time:
-
-\begin{itemize}
-    \item \textbf{Attack/Defence Maps (4 planes):} Per-square attacker and defender counts for each side, computed using \texttt{board.attackers()} and normalised by their board-wide maximum.
-    \item \textbf{Mobility (2 planes):} For each piece, the number of legal moves is counted and broadcast to its square. One plane per side.
-    \item \textbf{Pin Detection (1 plane):} Absolute pins to the King are detected by temporarily removing each friendly piece and checking whether the King becomes attacked along the vacated ray.
-    \item \textbf{King Safety (2 planes):} A heuristic score per side based on pawn shield integrity (presence of pawns on the second and third ranks adjacent to the King) and open files near the King.
-    \item \textbf{Material Imbalance (5 planes):} Per-piece-type count differences (Pawn, Knight, Bishop, Rook, Queen), broadcast as constant $8 \times 8$ planes.
-\end{itemize}
-
+After the initial implementation and early training runs, several architectural improvements addressed weaknesses I'd noticed.
 % TODO: Write more - discuss the encoding time overhead of computing these extra planes and whether it was worth it in practice
 
 \subsection{Spatial Policy Head}
 
-The initial policy head used global average pooling, collapsing the $C \times 8 \times 8$ feature maps into a $C$-dimensional vector before projecting to the 4544 move logits. This discards spatial locality. The spatial policy head replaces GAP with a $1 \times 1$ convolution that reduces the channel count to $C'$, followed by \texttt{flatten()}, producing a $C' \times 8 \times 8 = 64 C'$ vector. A final linear layer maps this to 4544 logits. This turned out to be important: it lets the network associate specific board squares with specific move origins and destinations.
+The policy head uses spatial features when available: a $1 \times 1$ convolution reduces channels to $C'$, batch norm + ReLU is applied, then the $8 \times 8$ grid is flattened to a $64C'$ vector and mapped by a linear layer to 4544 logits. If spatial features are not available, it falls back to a two-layer MLP on the backbone vector.
 
 \subsection{Squeeze-and-Excitation Blocks}
 
 SE blocks were inserted into each \texttt{ResidualBlock}. After the second convolution and batch normalisation, the feature maps are squeezed via global average pooling to a channel vector of dimension $C$, passed through a bottleneck (\texttt{Linear($C$, $C/r$)} $\rightarrow$ ReLU $\rightarrow$ \texttt{Linear($C/r$, $C$)} $\rightarrow$ Sigmoid, with reduction ratio $r = 16$), and the resulting channel weights multiply the original feature maps. The SE block sits inside the residual path, so the skip connection ensures stable gradient flow even in deep (20-block) configurations.
 
-\subsection{Flash Attention}
-
-The Transformer encoder blocks were updated to use \texttt{torch.nn.functional.scaled\_dot\_product\_attention} in place of the explicit QKV matmul and softmax. On supported hardware, this dispatches to the Flash Attention kernel, reducing attention memory from $O(n^2)$ to $O(n)$ and giving a measurable training speedup for the 64-token SquareTransformer sequence length.
-
 \subsection{Activation Functions}
 
-ReLU activations in the ConvNet and ResNet backbones were replaced with SiLU (Swish), which provides smoother gradients near zero. The Transformer blocks prevented GELU from being used in the initial implementation.
+ReLU activations in the ConvNet and ResNet backbones were replaced with SiLU (Swish), which gives smoother gradients near zero. The Transformer blocks already used GELU, so no change was needed there.
 
 \section{Data Pipeline Evolution}
 
-The initial streaming Parquet pipeline (Section~\ref{sec:initial_pipeline}) worked well for prototyping but became the training bottleneck at scale---per-row \texttt{python-chess} encoding could not keep up. A five-stage offline pipeline was built to support over one billion positions.
+The initial streaming Parquet pipeline (Section~\ref{sec:initial_pipeline}) worked well for prototyping but became the training bottleneck at scale.
 
-\subsection{Stage 1: Deduplication}
+\subsection{Stage 1: Filtering and Deduplication}
 \label{sec:initial_pipeline}
 
-DuckDB's out-of-core SQL engine normalises FEN strings (stripping halfmove and fullmove counters), groups by the normalised FEN, and retains only the row with the highest analysis depth or node count. This eliminates redundant positions that would otherwise bias the training distribution toward common openings.
+DuckDB's out-of-core SQL engine normalises FEN strings (stripping halfmove and fullmove counters), groups by the normalised FEN, and keeps only the row with the highest analysis depth or node count. This eliminates redundant positions that would otherwise bias the training distribution toward common openings. Also removes any entries that didn't meet the criteria of >= 18 depth or had a centipawn evaluation that fell outside the range of ± 4000.
 
 \subsection{Stage 2: PV Line Unrolling}
-For each base position, the first $N$ moves of the principal variation are played out using \texttt{python-chess}. Each intermediate position is emitted as a separate training example, with the subsequent PV move as its policy target. The root evaluation inherits sign flips across alternating sides, avoiding the prohibitive cost of re-evaluating every unrolled position with Stockfish. A drift analysis validated this approximation: 96\% of inherited evaluations remained within $\pm 100$ centipawns of the independently computed value.
+For each base position, the first $N$ moves of the principal variation are played out using \texttt{python-chess}. Each intermediate position is emitted as a separate training example, with the subsequent PV move as its policy target. The root evaluation inherits sign flips across alternating sides — avoiding the prohibitive cost of re-evaluating every unrolled position with Stockfish. A drift analysis validated this: 96\% of inherited evaluations stayed within $\pm 100$ centipawns of the independently computed value.
 
-\subsection{Stage 3: Tablebase Enrichment}
-
-Positions with five or fewer pieces are probed against the Syzygy 5-piece tablebases (approximately 1\,GB on disk) using \texttt{chess.syzygy.Tablebase}. On a hit, the engine's approximate evaluation is replaced with the mathematically exact WDL outcome ($+1$, $0$, or $-1$), and the policy target is set to the DTZ-optimal (Distance To Zeroing) move. At inference time, the agent bypasses the neural network entirely for $\leq 5$-piece positions, playing the tablebase-optimal move directly.
-
-\subsection{Stage 4: Target Computation and Cleanup}
-
-Engine centipawn scores are converted to sparse policy distributions: only the top 20 moves are stored as pairs of \texttt{uint16} indices and \texttt{float16} scores (81 bytes per position). Value targets are stored as \texttt{float16} (2 bytes).
-
-Several dataset cleanup rules apply:
-
-\begin{itemize}
-    \item Positions with analysis depth $\leq 10$ or zero node counts are removed.
-    \item Decisively won positions ($|\text{cp}| > 1500$) and trivial mate-in-1/2 are downsampled to prevent value head bias toward extreme evaluations.
-    \item The $\pm 100$--$500$ centipawn range, where precise evaluation matters most for playing strength, is upsampled.
-\end{itemize}
-
-\subsection{Stage 5: Binary Sharding}
-
-Processed positions are packed into binary shards of 100K--500K positions. Each position is stored as 12 \texttt{uint64}- bitboards plus 2 metadata bytes (approximately 98 bytes for the board state), along with the sparse policy and value targets. The resulting dataset occupies roughly 180--200\,GB for one billion positions and is loaded via a map-style \texttt{torch.utils.data.Dataset} with memory-mapped access, true random shuffling via \texttt{DistributedSampler}, \texttt{persistent\_workers=True}, and configurable \texttt{prefetch\_factor}.
+\subsection{Stage 3: Deduplication and Target Computation}
+Positions were normalished again since during the PV unrolling we could have arrived at the same position, in which case the position with the higher depth count or knodes count was kept and others were discarded. By doing this we were able to go from about 3 billion positions to 1.8 billion positions. Engine centipawn scores are converted value targets as ± 1 which are stored as \texttt{float16} (2 bytes).
 
 % TODO: Write more - discuss the tradeoffs in shard size selection and any I/O bottlenecks encountered during training
 
@@ -201,34 +172,25 @@ Processed positions are packed into binary shards of 100K--500K positions. Each 
 Two baselines anchor the evaluation:
 
 \begin{itemize}
-    \item \textbf{RandomAgent:} Plays uniformly at random from the legal move set. This provides a lower bound on playing strength and verifies that trained models have learned meaningful patterns.
-    \item \textbf{UCIAgent (Stockfish):} Wraps Stockfish at configurable depth and skill levels. At full strength (depth 15+), Stockfish serves as the upper bound. At reduced depths (1--5), it provides intermediate calibration points for estimating ELO.
+    \item \textbf{RandomAgent:} Plays uniformly at random from the legal move set. It's the lower bound — if a trained model can't beat random, something has gone wrong.
+    \item \textbf{UCIAgent (Stockfish):} Wraps Stockfish at configurable depth and skill levels. At full strength (depth 15+), Stockfish sets the upper bound. At reduced depths (1-5), it provides intermediate calibration points for estimating Elo.
 \end{itemize}
 
 \section{Benchmarking and Evaluation Pipeline}
 
+% [figure] Benchmarking pipeline flow: match scheduling → analysis → plots → reports.
 The benchmarking system automates model evaluation through six stages:
 
 \begin{enumerate}
-    \item Each trained model plays a configurable number of games against Stockfish, alternating colours for fairness. Both raw-policy (greedy argmax) and MCTS-augmented agents are supported.
+    \item Each trained model plays a configurable number of games against Stockfish, alternating colours for fairness.
     \item After every move, Stockfish analyses the resulting position at depth 18, recording the centipawn score from White's perspective. Mate scores are converted to large constants ($\pm 10000$).
     \item Each game is exported in Portable Game Notation with embedded evaluation comments, enabling review in standard chess software (Lichess, Chess.com, ChessBase).
     \item Matplotlib generates evaluation flow charts for each game, plotting centipawn score against move number with win/draw/loss shading. A combined comparison plot overlays all models.
-    \item Per-move inference times are recorded for both the model and the Stockfish opponent, enabling latency comparisons.
     \item A Markdown report is generated with win/draw/loss tables, timing statistics (mean, median, min, max), and links to PGN and figure files.
 \end{enumerate}
 
-\section{Testing and Debugging}
-
-Unit tests cover critical components: move encoding (verifying that all 4544 UCI moves round-trip through the index lookup), encoder output shapes, model forward-pass dimensions, and loss function gradients. Integration tests verify end-to-end training on a small synthetic dataset to catch dimension mismatches across the encoder--model--head pipeline.
-
-Debug utilities include the \texttt{CNNEncoder.decode\_piece\_planes()} method, which reconstructs piece positions from an encoded tensor for visual inspection, and the \texttt{LearningAgent.get\_move\_distribution()} method, which returns the top-$k$ moves with their softmax probabilities for diagnosing policy quality.
-
-% TODO: Write more - describe specific bugs caught by the test suite (e.g., move encoding edge cases like underpromotions or en passant), coverage statistics, and any regression tests added after fixing training bugs
-% TODO: Write more - discuss debugging strategies for training failures (e.g., NaN losses, policy collapse) and tools used to diagnose them
-
 \section{Documentation}
 
-The codebase follows a consistent documentation standard: every module, class, and public method includes a docstring specifying its purpose, arguments, and return values. A \texttt{README.md} provides installation instructions, a quick-start guide, and example training commands. The \texttt{setup.sh} script automates the creation of the environment and the installation of dependencies.
+The codebase follows a consistent documentation standard: every module, class, and public method has a docstring specifying its purpose, arguments, and return values. A \texttt{README.md} covers installation, a quick-start guide, and example training commands. The \texttt{setup.sh} script automates environment setup and dependency installation.
 
 % TODO: Write more - discuss documentation for reproducibility (e.g., how experiment configs are versioned), any auto-generated API docs, and how the documentation evolved as the project grew

@@ -6,6 +6,7 @@
 % Representative engines (Stockfish architecture)
 
 Early chess engines relied on the minimax algorithm \cite{calderan_minimax_chess}, combined with alpha-beta pruning, to efficiently search the game tree.
+% [figure] Minimax tree with alpha-beta pruning cutoffs highlighted.
 % Refer https://fvcalderan.github.io/myworks/articles/minimax_chess_engine.pdf here
 
 These engines used handcrafted evaluation functions that scored board positions based on material count, piece activity, king safety, and other heuristics. Deep Blue \cite{deep_blue_paper} is the canonical example.
@@ -39,10 +40,11 @@ MCTS also adapts its search strategy based on prior simulation outcomes, making 
 % Self-play reinforcement learning
 % Leela Chess Zero is an open-source implementation
 
-AlphaGo \cite{alphago_paper}, developed by DeepMind, combined deep learning with self-play reinforcement learning and defeated Stockfish in a 2017 match. Its architecture has two components: a policy network that predicts move probabilities and a value network that estimates position outcomes. Through self-play alone, with no human game data, AlphaGo surpassed human-level play in chess, shogi, and Go.
+AlphaZero \cite{alphago_paper}, developed by DeepMind, combined deep learning with self-play reinforcement learning and defeated Stockfish in a 2017 match. Its architecture has two components: a policy network that predicts move probabilities and a value network that estimates position outcomes. Through self-play alone, with no human game data, AlphaGo surpassed human-level play in chess, shogi, and Go.
+% [figure] AlphaZero loop: self-play → training → updated policy/value networks.
 % Refer https://arxiv.org/pdf/1712.01815 here
 
-Leela Chess Zero replicates AlphaGo's design and training methodology as an open-source project, and is now competitive with Stockfish at top-level play. The wider impact of AlphaGo's approach has been a shift toward neural network architectures \cite{look_ahead_chess_nn} and self-play training in chess engine research.
+Leela Chess Zero replicates AlphaGo's design and training methodology as an open-source project, and is now competitive with Stockfish at top-level play. The wider impact of AlphaZero's approach has been a shift toward neural network architectures \cite{look_ahead_chess_nn} and self-play training in chess engine research.
 % Refer https://arxiv.org/pdf/2406.00877 here
 
 % TODO: Write more - flesh out specific architectural details (residual blocks, number of filters) and how Leela Chess Zero's distributed training differs from AlphaGo's
@@ -67,6 +69,7 @@ Giraffe \cite{deep_learning_game_ai} trains a neural network evaluation function
 % Mixed approaches
 
 Graph representations of chess positions \cite{gnn_chess} \cite{gnn_chess_modelling} aim to capture the game's relational structure more directly than grid-based encodings. Rigaux and Kashima (2024) \cite{gnn_chess} proposed a graph-based neural network architecture that models interactions between pieces and their board positions, achieving improved evaluation accuracy and strategic insight compared to grid baselines.
+% [figure] Example chess position rendered as a graph: nodes as pieces/squares, edges as legal moves/attacks.
 % Refer https://arxiv.org/pdf/2410.23753 here
 % Refer https://theses.liacs.nl/pdf/2022-2023-AlwerSaleh.pdf here
 
@@ -75,9 +78,9 @@ Explainable AI (XAI) \cite{xai_chess} \cite{look_ahead_chess_nn} in chess is a n
 % Refer https://arxiv.org/pdf/2406.00877 here (Leela Chess Interop)
 
 % TODO: Write more - add a paragraph on mixed approaches (e.g., NNUE as a hybrid of handcrafted features and neural evaluation) and how they relate to the graph/XAI work
-AlphaGateau paper \cite{gnn_chess} demonstrates that while using fewer parameters and compute time compared to AlphaZero thy were able to reach an ELO of 2105 ± 42 with just 131k total frames which were derived from 256 games, which when compared to a similarly sized AlphaZero model with 5 layers was only able to achieve an ELO of 667 ± 38 in 5x5 chess. Finetuning the AlphaGateau model on 8x8 chess improves the accuracy from 807 ± 46 to 1876 ± 47, which suggests that it was able to learn general chess rules from 5x5 and apply them to 8x8 with some success.
+AlphaGateau (Rigaux and Kashima) paper \cite{gnn_chess} demonstrates that while using fewer parameters and compute time compared to AlphaZero thy were able to reach an ELO of 2105 ± 42 with just 131k total frames which were derived from 256 games, which when compared to a similarly sized AlphaZero model with 5 layers was only able to achieve an ELO of 667 ± 38 in 5x5 chess. Finetuning the AlphaGateau model on 8x8 chess improves the accuracy from 807 ± 46 to 1876 ± 47, which suggests that it was able to learn general chess rules from 5x5 and apply them to 8x8 with some success.
 
-In the paper learned look-ahead in a chess playing neural network \cite{look_ahead_chess_nn}, they were able to demonstrate that neural networks learn to look ahead, which helps them achieve higher ELO numbers despite not having the ability to use tree based search methods, which was later also shown by Google DeepMind team with their searchless chess paper \cite{searchless_chess}.
+In the paper learned look-ahead in a chess playing neural network (Erik and Shreyas) \cite{look_ahead_chess_nn}, they were able to demonstrate that neural networks learn to look ahead, which helps them achieve higher ELO numbers despite not having the ability to use tree based search methods, which was later also shown by Google DeepMind team with their searchless chess paper \cite{searchless_chess}.
 
 
 \section{Game AI Frameworks}
@@ -121,6 +124,7 @@ The Lichess Board API \cite{lichess_api} endpoints (boardGameStream, boardGameMo
 % Frontend frameworks for board rendering
 
 The WebSocket Protocol (IETF RFC 6455, 2011) \cite{websocket} is the standard for full-duplex communication over a single TCP connection and underlies the game communication layer in this project.
+% [figure] Web platform data flow: client ↔ WebSocket server ↔ model inference service.
 % Refer https://tools.ietf.org/html/rfc6455 here
 
 The choice of Python and Svelte \cite{svelte} for the backend and frontend, respectively, is well-suited to this project. Python allows us to really quickly load models without intermediate layers to run the actual models, while Svelte's reactive framework delivers efficient UI updates with minimal overhead.
@@ -135,6 +139,7 @@ The choice of Python and Svelte \cite{svelte} for the backend and frontend, resp
 % How your project builds on/differs from existing work
 
 Three architectural families dominate current research on chess AI: CNNs \cite{deep_chess_paper}, transformers \cite{chessformer} \cite{searchless_chess}, and graph neural networks \cite{gnn_chess} \cite{gnn_chess_modelling}. Each has particular strengths and weaknesses that motivate the comparative approach taken in this project. Stockfish post 2020 confirms that CNNs remain competitive in hybrid NNUE + $\alpha$-$\beta$ deployments, which are the most computationally efficient at inference time. However, CNNs have a structural limitation: a 3$\times$3 kernel sees only adjacent squares, so many stacked layers are needed to propagate information across the board. This is a poor match for chess, where a single piece (e.g., a rook or queen) can instantly influence the entire board.
+% [figure] Comparative diagram of CNN grid, transformer tokens, and GNN graph representation.
 % Refer https://arxiv.org/pdf/2410.23753 here
 
 Transformers address this receptive field problem through global self-attention. Chessformer (CF-240M) \cite{chessformer} achieves 2347 Elo and 93.5\% puzzle accuracy at 30$\times$ fewer FLOPs than comparable AlphaGo-scale models. The finding is that positional encoding is the decisive design choice: absolute, relative, and dynamic encodings produce markedly different results. However, quadratic attention complexity beyond 64 tokens, while manageable, is costly at scale compared to CNN inference, and transformers require careful positional encoding, since absolute embeddings fail to capture board geometry, and naive relative encodings lose piece-type information.
@@ -144,13 +149,14 @@ Daniel and Philip (2024) \cite{chessformer} and Google DeepMind (2024) \cite{sea
 % Refer https://arxiv.org/pdf/2402.04494 here
 % Refer https://arxiv.org/pdf/2409.12272 here
 
-Graph neural networks offer a third alternative. AlphaGateau \cite{gnn_chess} (GAT + GATEAU edge-feature layer) outperforms ResNet-based AlphaGo by an order of magnitude in sample efficiency on a 5$\times$5 chess variant, showing that the graph representations encode relational structure (legal moves as edges) that grids cannot be expressed compactly. Yet Rigaux and Kashima train only on a 5$\times$5 variant and fine-tune to 8$\times$8; no published work presents a full GCN/GAT chess engine trained end-to-end on standard chess from scratch, and tested against CNN and Transformer baselines on the same dataset. This is the most direct gap this project fills.
+Graph neural networks offer a third alternative. AlphaGateau \cite{gnn_chess} (GAT + GATEAU edge-feature layer) outperforms ResNet-based AlphaGo by an order of magnitude in sample efficiency on a 5$\times$5 chess variant, showing that the graph representations encode relational structure (legal moves as edges) that grids cannot be expressed compactly. Yet Rigaux and Kashima \cite{gnn_chess} train only on a 5$\times$5 variant and fine-tune to 8$\times$8; no published work presents a full GCN/GAT chess engine trained end-to-end on standard chess from scratch, and tested against CNN and Transformer baselines on the same dataset. This is the most direct gap this project fills.
 % Refer https://arxiv.org/abs/2410.23753 here
 
 \section{Summary}
 % Key insights informing your methodology
 
-Two findings from the literature directly shape the methodology of this project. First, representation matters more than depth. Chessformer \cite{chessformer} shows that positional encoding is the decisive variable for transformers, while Rigaux and Kashima \cite{gnn_chess} show that graph edges (encoding legal moves) capture the relational structure that grid-based representations miss. A multi-architecture comparison is the natural empirical test of this claim. Second, supervised Stockfish annotation is a viable and scalable training signal: Chessformer, Searchless Chess \cite{searchless_chess} all validate this pipeline, but none investigate PV unrolling for position diversity.
+Two findings from the literature directly shape the methodology of this project. First, representation matters more than depth. Chessformer \cite{chessformer} shows that positional encoding is the decisive variable for transformers, while Rigaux and Kashima \cite{gnn_chess} show that graph edges (encoding legal moves) capture the relational structure that grid-based representations miss. A multi-architecture comparison is the natural empirical test of this claim. Second, supervised Stockfish annotation is a viable and scalable training signal: Chessformer, Searchless Chess \cite{searchless_chess} all validate this pipeline, but none investigate PV unrolling for position diversity. Where we take the Lichess dataset and the top Stockfish line and recursively apply the moves suggested in the line and hence giving us 10 different positions to train from one sample.
+% Refer to where it is explained in detail
 
 The main reason to use three architectures is that chess is a complex domain with multiple interacting patterns. CNNs are good at local spatial patterns, transformers excel at long-range dependencies, and GNNs capture relational structure. By comparing all three on the same dataset and evaluation benchmarks, we can identify which architectue is most effective for search-less chess.
 % Refer https://arxiv.org/pdf/2410.23753 here

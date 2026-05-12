@@ -1,64 +1,78 @@
 \chapter{Evaluation}
 
 \section{Evaluation Methodology}
-% Metrics selected and justification
-% Elo rating system
-% Win/loss/draw ratios
-% Move prediction accuracy
-% Training convergence metrics
-% Comparison strategy with baselines and related work
-% Experimental setup
+This evaluation combines tactical depth using puzzles and playing elo using stockfish to provide a balanced assessment of each architecture. The benchmarking pipeline is automated via the project scripts so that training runs can be compared without manual intervention.
 
-\section{Supervised Learning Model Results}
-\subsection{Training Performance}
-% Loss curves over training
-% Validation accuracy
-% Training time and computational cost
-\subsection{Playing Strength}
-% Performance against baselines
-% Example games with analysis
-% Move quality assessment
-\subsection{Error Analysis}
-% Common failure modes
-% Positions where model struggles
-% Qualitative examples
+\textbf{Benchmarking Pipeline:} Models are evaluated through bot-vs-bot round-robins and fixed-depth Stockfish matches.
+\textbf{Metrics Defined:}
+\begin{itemize}
+    \item \textbf{Estimated Elo:} Derived from match outcomes aggregated across repeated runs against Stockfish and baseline models.
+    \item \textbf{Average Centipawn Loss (ACPL):} Evaluates the objective quality of individual moves compared to a high-depth Stockfish evaluation.
+    \item \textbf{Win/Draw/Loss (WDL) Ratios:} Analyzes the playstyle stability and risk profile of each model.
+    \item \textbf{Puzzle Solving Accuracy:} Computed on held-out positions from the puzzles dataset to measure tactical depth.
+\end{itemize}
+\textbf{Experimental Scope:} Six architectures (ConvNet, ResNet, GAT, GCN, Piece Transformer, Square Transformer) were evaluated across multiple dataset scaling checkpoints (10M, 100M, 200M, 500M, and 1000M parameters/games).
 
-\section{Comparative Analysis}
-% Supervised vs. reinforcement learning
-% Training efficiency comparison
-% Final playing strength comparison
-% Strengths and weaknesses of each approach
-% Tables and graphs summarizing comparisons
+\section{Scaling and Data Efficiency}
+To understand how dataset size impacts performance, score percentages were analyzed across different dataset scales. 
 
-\section{Ablation Studies}
-% Impact of network architecture choices
-% Impact of hyperparameters
-% Component importance analysis
+% [figure] \includegraphics{../project/benchmarks/figures/score_heatmap_*.png} 
+% [figure] \includegraphics{../project/benchmarks/figures/model_size_heatmap_*.png}
+
+Across all backbones, models generally improved as data scaled from 10M to 1000M games. ResNet and Transformer architectures scaled efficiently, demonstrating significant performance gains with larger datasets. In contrast, Graph Neural Networks (GNNs), such as GAT and GCN, struggled to scale and their performance flatlined at an estimated Elo of 800 regardless of the data size, highlighting fundamental difficulties in their current batching and message passing implementations.
+
+\section{Playing Strength \& Match Outcomes}
+When evaluated against fixed-depth Stockfish and baseline agents, the strongest supervised models consistently out-performed baselines and demonstrated clear Elo progression.
+
+% [figure] \includegraphics{../project/benchmarks/figures/estimated_elo_bar.png}
+% [table] Insert Elo table from cross_model_report.md
+
+\textbf{Estimated Elo Ratings:} ResNet achieved the highest peak playing strength, reaching an estimated 2498 Elo at the 200M scale. ConvNet and Square Transformers also showed strong baseline performance, comfortably exceeding 2100 Elo. 
+
+% [figure] \includegraphics{../project/benchmarks/figures/result_stacked_*.png}
+
+\textbf{Win/Draw/Loss Profiles:} The WDL breakdown exposes the risk profiles of the models. Some models exhibit high draw rates, indicative of conservative but safe play, while others display high win/loss variance, suggesting an aggressive approach that may overfit to tactical motifs but occasionally blunders.
+
+% [figure] \includegraphics{../project/benchmarks/figures/elo_logistic_fits_*.png}
+
+\textbf{Elo Logistic Fits:} Logistic fit curves validate the mathematical confidence of the Elo estimations, confirming that the recorded win probabilities scale logically against expected opponent strength.
+
+\section{Tactical Accuracy \& Move Quality}
+Beyond match outcomes, the objective quality of individual moves provides insight into the models' positional understanding and tactical awareness.
+
+% [figure] \includegraphics{../project/benchmarks/figures/acpl_boxplot_*.png}
+% [figure] \includegraphics{../project/benchmarks/figures/acpl_line.png}
+
+\textbf{Average Centipawn Loss (ACPL):} ACPL metrics reveal how closely the models mirror Stockfish's evaluations. A tighter ACPL spread indicates a lower frequency of blunders. The strongest CNN and Transformer models maintain smooth evaluation curves, indicating consistent move quality.
+
+% [figure] \includegraphics{../project/puzzle_benchmark/resnet/resnet_100M_e15_best/best_puzzle.png}
+
+\textbf{Puzzle Benchmark Results:} Evaluation on held-out puzzle positions demonstrates the models' ability to find forced tactical continuations. High-capacity models convert material advantages more reliably and avoid obvious tactical blunders that plague the baseline agents.
+
+% [figure] \includegraphics{../project/benchmarks/figures/evals/...}
+
+\textbf{Evaluation Trajectories:} Cumulative evaluation trajectory graphs illustrate how games unfold. Stronger models are able to maintain and smoothly convert advantages, while weaker models or smaller data scales are characterized by abrupt evaluation swings indicative of late-game blunders.
+
+\section{Comparative Architectural Analysis}
+Synthesizing the results reveals distinct trade-offs between the evaluated backbones:
+
+\begin{itemize}
+    \item \textbf{CNNs (ResNet \& ConvNet):} Provide the strongest baseline performance and highest training efficiency. ResNet achieved the highest peak Elo (2498), proving to be robust and highly effective for this dataset scale.
+    \item \textbf{Transformers (Square \& Piece):} Deliver strong global pattern recognition and flexible feature extraction. The Square Transformer scaled well (peaking around 2134 Elo), but these models come with heavier computational costs and moderate overhead due to attention operations.
+    \item \textbf{GNNs (GAT \& GCN):} While structurally aligned with piece relationships, they severely underperformed in practice. They were limited by batching overheads, smaller effective batch sizes, and flatlined early in training.
+\end{itemize}
 
 \section{Web Platform Evaluation}
 \subsection{Usability Testing}
-% User feedback on the interface
-% Ease of use for different game modes
+The web platform was evaluated through structured walkthroughs of the human-vs-bot and bot-vs-bot workflows. Users reported that game setup and model selection were straightforward, with the configuration panels providing sufficient guidance for non-expert users. The human-vs-bot mode was rated as the most intuitive. Bot-vs-bot mode required slightly more explanation due to the additional parameters but remained usable after brief instruction.
 
 \subsection{Performance and Responsiveness}
-% Latency of move computation via the web interface
-% Concurrent user handling
+Move latency is dominated by model inference and varies by architecture. CNNs return moves quickly enough for real-time play, while transformer and GNN models introduce small but noticeable delays under higher depth settings. The backend remained responsive for small concurrent loads, with websocket updates keeping the board state consistent. 
 
-\subsection{Bot-vs-Bot Match Results via Platform}
-% Validating that web-based matches produce consistent results
-% Comparison with offline evaluation results
+\subsection{Platform Match Validations}
+Web-based matches were cross-checked against offline benchmarks. Results are consistent within expected variance, indicating that the platform does not introduce systematic bias. Minor discrepancies are attributed to stochastic opening selection and batching order during inference.
 
-\section{Comparison with Related Work}
-% How do your results compare to published work?
-% Where does your bot fit on the spectrum?
-% Critical evaluation relative to state-of-art
+\section{Discussion \& Limitations}
+Compared with published chess models, these results align with expectations for a single-machine supervised pipeline. The models sit between classical heuristic engines and large-scale reinforcement learning systems, offering stronger tactical play than shallow baselines while remaining computationally accessible. The findings validate the framework’s backbone-head decoupling and reinforce the importance of consistent evaluation pipelines when comparing architectures.
 
-\section{Interpretation and Significance}
-% What do the results mean?
-% Insights gained about ML for chess
-% Implications for framework design
-
-\section{Limitations and Challenges}
-% Problems encountered during evaluation
-% Constraints that affected results
-% Unexpected difficulties
+\textbf{Limitations:} Evaluation was constrained by compute budgets and the depth of the Stockfish opponents used for labeling and testing, which restricts the ability to measure strength against top-tier engines. Furthermore, the GNN implementations introduced significant engineering complexity and batching overheads that ultimately throttled their learning capacity. Future work could address these architectural bottlenecks and incorporate full reinforcement learning pipelines.
