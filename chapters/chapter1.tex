@@ -2,21 +2,31 @@
 
 \section{Problem Statement}
 Chess has been a benchmark for Artificial Intelligence research for decades. It is a controlled, fully observable environment that exposes how well a machine can reason under combinatorial pressure. Early milestones such as IBM's Deep Blue \cite{deep_blue_paper} relied on handcrafted heuristics and ``brute force'' calculation. While effective, these systems were restrictive: they could not generalise beyond the specific rules their creators encoded.
-Today, neural-heavy architectures like AlphaZero, MuZero, and Leela Chess Zero dominate competitive computer chess. These engines have pushed ELO ratings past 3500, effectively ending the era of human-computer competition. But this strength comes at a cost. Modern engines rely on significant computational overhead and deep search trees to maintain their advantage.
+Today, neural-heavy architectures like AlphaZero, MuZero, and Leela Chess Zero dominate competitive computer chess. These engines have pushed ELO ratings past 3500, effectively ending the era of human-computer competition. But this strength comes at a cost. Modern engines See figure \ref{fig:searchbased_engine} rely on significant computational overhead and deep search trees to maintain their advantage.
 
 \section{Motivation}
 Current state-of-the-art engines are strong, but they are also ``computationally greedy.'' Their performance comes from exploring millions of potential future states (search) before selecting a move.
 % TODO: Write more - add a concrete example of latency or resource usage that illustrates this barrier (e.g., Leela's GPU requirements, Stockfish thread counts)
 
-This project pursues ``Search-less Chess.'' By training Convolutional Neural Networks (CNNs), Transformers, and Graph Neural Networks (GNNs), we investigate whether a model can develop a ``grandmaster's intuition,'' the ability to look at a board and immediately identify the best move without a search algorithm. Removing the search would reduce move latency and could reveal how machine learning architectures internalise spatial and strategic relationships.
-% [figure] Comparison schematic: search-based engine pipeline vs search-less inference pipeline (latency and compute stages).
+This project pursues ``Search-less Chess.'' See figure \ref{fig:searchless_engine} By training Convolutional Neural Networks (CNNs), Transformers, and Graph Neural Networks (GNNs), we investigate whether a model can develop a ``grandmaster's intuition,'' the ability to look at a board and immediately identify the best move without a search algorithm. Removing the search would reduce move latency and could reveal how machine learning architectures internalise spatial and strategic relationships.
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\linewidth]{figures/searchbased.png}
+    \caption{Typical search based chess engine flow}
+    \label{fig:searchbased_engine}
+\end{figure}
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\linewidth]{figures/searchless.png}
+    \caption{Searchless chess engine flow being showcased}
+    \label{fig:searchless_engine}
+\end{figure}
 
 \section{The Challenge of Chess}
 Chess is a game of perfect information, yet it remains computationally "unsolved" because of its strategic depth. A player must balance tactical immediate threats (checks, captures) with abstract long-term goals (piece mobility, pawn structure, and king safety).
 
 \subsection{Computational Complexity}
 The complexity of chess is often illustrated by Shannon's Number, which estimates the game tree complexity at approximately \(10^{120}\). Even the state space, the number of possible legal positions, is estimated at \(10^{40}\).
-% [figure] Log-scale bar chart comparing state space size, game-tree size, and feasible search budgets.
 Because the number of possible variations grows exponentially with every half-move (ply), brute-force calculation is physically impossible. This requires an approach that either prunes the search space or, as we propose, bypasses it entirely through high-fidelity policy prediction.
 
 \subsection{Failure of Naive Approaches}
@@ -40,10 +50,9 @@ We train these models on the Lichess Stockfish dataset, effectively distilling t
 
 \subsection{Comparison Methodology}
 To validate our approach, we benchmark our models against Stockfish at varying ``depth'' constraints. This lets us simulate different ELO ranges and see where a search-less model begins to falter compared to a searching engine. We also use the Lichess Puzzle dataset to test the models on specific tactical motifs, providing a granular view of their ``chess IQ'' in areas such as forks, pins, and endgame transitions.
-% [figure] Evaluation overview: Stockfish depth ladder and puzzle categories used for benchmarking.
 
 \section{Summary of Key Results}
-% [TODO: To be completed following the experimental phase.]
+The experimental evaluation revealed that the CNNs, particularly the ResNet architecture, provided the strongest and most efficient performance for search-less chess, achieving a peak estimated rating of 2498 Elo with excellent tactical move quality. The Transformer models successfully grasped global board patterns and reached strong playing strengths exceeding 2100 Elo, while the GNNs struggled with batching complexities and failed to scale, flatlining around 800 Elo regardless of dataset size. Ultimately, dataset scaling from 10 million to 1 billion games significantly benefited the CNN and Transformer architectures.
 
 \section{Scope and Limitations}
 The goal of this research is not to compete with the world's strongest engines, but to push the ceiling of what is feasible within the ``search-less'' paradigm.

@@ -1,0 +1,255 @@
+\chapter{Additional Results}
+
+This appendix provides extended evaluation results that supplement the primary findings in Chapter 5. 
+
+\section{Summary Performance Metrics}
+These figures present the high-level aggregate performance metrics across all architectures.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/estimated_elo_bar.png}
+    \caption{Estimated Elo ratings for all architectures evaluated against Stockfish.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_line.png}
+    \caption{ACPL trends across all architectures and parameter scales.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/score_line.png}
+    \caption{Score percentage trends across all architectures and parameter scales.}
+\end{figure}
+
+\section{Extended Evaluation Trajectories}
+The following plots illustrate the cumulative evaluation trajectories for all models across the full range of parameter scales and Elo checkpoints. These trajectories visualize how well each model maintains its advantage or succumbs to the horizon effect in long games.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/evals/eval_cumulative_convnet_1000M_2300.png}
+    \caption{Cumulative evaluation for ConvNet 1000M against Stockfish 2300.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/evals/eval_cumulative_gat_100M_2300.png}
+    \caption{Cumulative evaluation for GAT 100M against Stockfish 2300.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/evals/eval_cumulative_gcn_100M_2300.png}
+    \caption{Cumulative evaluation for GCN 100M against Stockfish 2300.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/evals/eval_cumulative_piece_transformer_1000M_2300.png}
+    \caption{Cumulative evaluation for Piece Transformer 1000M against Stockfish 2300.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/evals/eval_cumulative_resnet_1000M_2300.png}
+    \caption{Cumulative evaluation for ResNet 1000M against Stockfish 2300.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/evals/eval_cumulative_square_transformer_1000M_2300.png}
+    \caption{Cumulative evaluation for Square Transformer 1000M against Stockfish 2300.}
+\end{figure}
+
+\section{Complete Score Heatmaps}
+The full set of score percentage heatmaps organized by model size scaling (10M to 1000M).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/score_heatmap_10M.png}
+    \caption{Score heatmap for 10M parameter models.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/score_heatmap_100M.png}
+    \caption{Score heatmap for 100M parameter models.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/score_heatmap_200M.png}
+    \caption{Score heatmap for 200M parameter models.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/score_heatmap_500M.png}
+    \caption{Score heatmap for 500M parameter models.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/score_heatmap_1000M.png}
+    \caption{Score heatmap for 1000M parameter models.}
+\end{figure}
+
+\section{Model Size Scaling Heatmaps}
+Heatmaps illustrating the scaling behavior of each specific architecture across different dataset sizes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/model_size_heatmap_convnet.png}
+    \caption{Model size heatmap for ConvNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/model_size_heatmap_gat.png}
+    \caption{Model size heatmap for GAT.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/model_size_heatmap_gcn.png}
+    \caption{Model size heatmap for GCN.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/model_size_heatmap_piece_transformer.png}
+    \caption{Model size heatmap for Piece Transformer.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/model_size_heatmap_resnet.png}
+    \caption{Model size heatmap for ResNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/model_size_heatmap_square_transformer.png}
+    \caption{Model size heatmap for Square Transformer.}
+\end{figure}
+
+\section{Match Outcome Distributions}
+Stacked bar charts showing the exact win, draw, and loss breakdown for each architecture against fixed-depth Stockfish opponents.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/result_stacked_convnet.png}
+    \caption{Match outcomes for ConvNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/result_stacked_gat.png}
+    \caption{Match outcomes for GAT.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/result_stacked_gcn.png}
+    \caption{Match outcomes for GCN.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/result_stacked_piece_transformer.png}
+    \caption{Match outcomes for Piece Transformer.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/result_stacked_resnet.png}
+    \caption{Match outcomes for ResNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/result_stacked_square_transformer.png}
+    \caption{Match outcomes for Square Transformer.}
+\end{figure}
+
+\section{Elo Logistic Fits}
+Mathematical logistic curve fits used to map win probability to estimated playing strength.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/elo_logistic_fits_convnet.png}
+    \caption{Logistic Elo fit for ConvNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/elo_logistic_fits_gat.png}
+    \caption{Logistic Elo fit for GAT.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/elo_logistic_fits_gcn.png}
+    \caption{Logistic Elo fit for GCN.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/elo_logistic_fits_piece_transformer.png}
+    \caption{Logistic Elo fit for Piece Transformer.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/elo_logistic_fits_resnet.png}
+    \caption{Logistic Elo fit for ResNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/elo_logistic_fits_square_transformer.png}
+    \caption{Logistic Elo fit for Square Transformer.}
+\end{figure}
+
+\section{Average Centipawn Loss Distributions}
+Detailed boxplots analyzing the statistical variance in move quality across all parameter scales.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_boxplot_convnet.png}
+    \caption{ACPL distribution for ConvNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_boxplot_gat.png}
+    \caption{ACPL distribution for GAT.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_boxplot_gcn.png}
+    \caption{ACPL distribution for GCN.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_boxplot_piece_transformer.png}
+    \caption{ACPL distribution for Piece Transformer.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_boxplot_resnet.png}
+    \caption{ACPL distribution for ResNet.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/benchmarks/figures/acpl_boxplot_square_transformer.png}
+    \caption{ACPL distribution for Square Transformer.}
+\end{figure}
+
+\section{Puzzle Benchmark Accuracy}
+Bar charts detailing the tactical puzzle solving accuracy across different motifs for the highest capacity models of each architecture.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/puzzle_benchmark/convnet/convnet_1000M_e1_best/best_puzzle.png}
+    \caption{Puzzle benchmark accuracy for ConvNet 1000M.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/puzzle_benchmark/gat/gat_100M_e15_best/best_puzzle.png}
+    \caption{Puzzle benchmark accuracy for GAT 100M.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/puzzle_benchmark/gcn/gcn_100M_e15_best/best_puzzle.png}
+    \caption{Puzzle benchmark accuracy for GCN 100M.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/puzzle_benchmark/piece_transformer/piece_transformer_1000M_e1_best/best_puzzle.png}
+    \caption{Puzzle benchmark accuracy for Piece Transformer 1000M.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/puzzle_benchmark/resnet/resnet_1000M_e1_best/best_puzzle.png}
+    \caption{Puzzle benchmark accuracy for ResNet 1000M.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{../project/puzzle_benchmark/square_transformer/square_transformer_1000M_e1_best/best_puzzle.png}
+    \caption{Puzzle benchmark accuracy for Square Transformer 1000M.}
+\end{figure}

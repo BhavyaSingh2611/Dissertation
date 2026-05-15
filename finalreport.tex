@@ -3,7 +3,7 @@
 \documentclass{surreydissertation}
 
 % Write the approved title of your dissertation
-\title{Training Chess Bots with Various Machine Learning Techniques}
+\title{Searchless Chess: A comparative study of ML Models without Tree Search}
 
 % Write your full name, as in University records
 \author{Bhavya Singh}
@@ -20,6 +20,11 @@
 
 % Write the full name of your supervisor, without any titles
 \supervisor{Dr Joey Sik Chun Lam}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup[figure]{skip=4pt} % Adjust '4pt' to your preferred distance
+% \usepackage{tikz}
+% \usetikzlibrary{arrows.meta, shapes.geometric, calc}
 
 \begin{document}
 \maketitle
@@ -45,13 +50,10 @@
 
 % appendices
 \appendix
-\include{appendices/appendix_a_code_listings}
-\include{appendices/appendix_b_additional_results}
-\include{appendices/appendix_c_user_guide}
-\include{appendices/appendix_d_game_examples}
-\include{appendices/appendix_e_ethical_approval}
-\include{appendices/appendix_f_project_planning}
-
+\include{appendices/appendix_a_additional_results}
+\include{appendices/appendix_b_user_guide}
+\include{appendices/appendix_c_game_examples}
+%\include{appendices/appendix_d_ethical_approval}
 \nocite{*}
 \bibliographystyle{IEEEtran}
 \bibliography{references}

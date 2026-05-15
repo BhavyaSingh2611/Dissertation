@@ -3,11 +3,11 @@
 \chapter*{Abstract}
 
 Modern chess engines achieve superhuman play but depend on deep search trees
-that demand substantial computational resources. This dissertation asks whether
+that demand substantial computational resources. This dissertation investigates whether
 a neural network can learn to play strong chess without any search at all. We
 train and compare three deep learning architectures, Convolutional Neural
 Networks (CNNs), Transformers, and Graph Neural Networks (GNNs), on millions of
-board positions labelled by Stockfish 16 at high depth. Each model receives an
+board positions labelled by Stockfish at high depth. Each model receives an
 encoded board state and outputs a policy over legal moves, bypassing
 traditional tree search entirely.
 
@@ -15,15 +15,5 @@ We evaluate the resulting "search-less" models in two ways: first, by playing
 them against Stockfish at controlled depth limits to estimate their ELO
 ratings; second, by testing them on the Lichess Puzzle dataset to measure
 tactical accuracy across motifs such as forks, pins, and endgame conversions.
-Our comparison considers not only move accuracy but also inference speed and
-parameter efficiency, since a primary motivation for removing search is
-deployment on resource-constrained hardware.
 
-% TODO: Write more - update this abstract with your actual results once experiments are complete
-
-The results show that each architecture captures different aspects of chess
-reasoning. CNNs excel at local pattern recognition, Transformers handle
-long-range piece coordination, and GNNs naturally represent the relational
-structure of legal moves. We discuss where each model fails, particularly in
-positions requiring deep calculation, and outline directions for closing the
-gap between search-based and search-free play.
+Our findings reveal a stark contrast in architectural scaling. ResNet-based CNNs proved remarkably robust, climbing to an estimated 2498 Elo while maintaining high training efficiency. Transformers also scaled impressively-leveraging global attention to break the 2100 Elo mark-but demanded a significantly heavier computational toll. Conversely, while Graph Neural Networks theoretically align perfectly with the relational structure of chess, they collapsed under batching overheads and flatlined early in training. Despite the strong baseline performance of CNNs and Transformers, all models eventually fell victim to the "horizon effect," blundering during deep tactical sequences. Ultimately, we demonstrate that searchless chess is genuinely viable, though bridging the final gap to traditional engines will require moving beyond purely supervised learning.

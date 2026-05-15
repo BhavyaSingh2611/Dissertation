@@ -1,0 +1,10 @@
+[Event "resnet vs SF Expert-2300"]
+[Site "?"]
+[Date "2026.05.12"]
+[Round "?"]
+[White "stockfish-ubuntu-x86-64-avxvnni_2300"]
+[Black "ResNet_10B_256C"]
+[Result "0-1"]
+[Termination "checkmate"]
+
+1. d4 { [%eval 0.38] } 1... d5 { [%eval 0.40] } 2. c4 { [%eval 0.33] } 2... e6 { [%eval 0.30] } 3. g3 { [%eval 0.25] } 3... dxc4 { [%eval 0.26] } 4. Nf3 { [%eval 0.21] } 4... a6 { [%eval 0.40] } 5. Qc2 { [%eval -0.61] } 5... b5 { [%eval -0.51] } 6. Bg5 { [%eval -0.52] } 6... Be7 { [%eval -0.48] } 7. Bxe7 { [%eval -0.47] } 7... Nxe7 { [%eval -0.47] } 8. e3 { [%eval -1.34] } 8... Bb7 { [%eval -1.37] } 9. Nbd2 { [%eval -1.26] } 9... Nd7 { [%eval -1.29] } 10. Bh3 { [%eval -1.99] } 10... c5 { [%eval -1.89] } 11. O-O { [%eval -2.02] } 11... O-O { [%eval -1.87] } 12. Rfd1 { [%eval -2.24] } 12... Nd5 { [%eval -2.04] } 13. e4 { [%eval -2.02] } 13... Nb4 { [%eval -1.94] } 14. Qc3 { [%eval -2.05] } 14... Nd3 { [%eval -1.63] } 15. Bf1 { [%eval -2.87] } 15... cxd4 { [%eval -2.81] } 16. Qa3 { [%eval -4.18] } 16... N7c5 { [%eval -3.84] } 17. Nxc4 { [%eval -5.32] } 17... bxc4 { [%eval -5.24] } 18. Bxd3 { [%eval -5.76] } 18... Nxd3 { [%eval -5.70] } 19. Nd2 { [%eval -5.94] } 19... Rc8 { [%eval -5.53] } 20. Rf1 { [%eval -6.40] } 20... f5 { [%eval -4.99] } 21. Nxc4 { [%eval -4.92] } 21... fxe4 { [%eval -5.63] } 22. Nd6 { [%eval -5.80] } 22... Qe7 { [%eval -5.57] } 23. f3 { [%eval -6.62] } 23... Ne5 { [%eval -5.50] } 24. Rae1 { [%eval -8.38] } 24... Nxf3+ { [%eval -9.05] } 25. Qxf3 { [%eval -9.24] } 25... exf3 { [%eval -9.19] } 26. Nxc8 { [%eval -9.51] } 26... Rxc8 { [%eval -9.66] } 27. a3 { [%eval -10.33] } 27... Rc2 { [%eval -12.64] } 28. h3 { [%eval -14.49] } 28... Qg5 { [%eval -99.60] } 29. g4 { [%eval -99.60] } 29... Qh4 { [%eval -99.70] } 30. b3 { [%eval -99.80] } 30... Qg3+ { [%eval -99.90] } 31. Kh1 { [%eval -99.90] } 31... Rh2# { [%eval 0.00] } 0-1

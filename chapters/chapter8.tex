@@ -3,23 +3,21 @@
 This project investigated whether deep learning architectures can develop meaningful chess-playing ability without search algorithms. To find out, a modular framework was built that supports six neural network backbones (ConvNet, ResNet, SquareTransformer, PieceTransformer, GCN, and GAT), each trainable under identical conditions with interchangeable policy, value, and dual output heads.
 
 The framework makes two main contributions. First, it provides a controlled, cross-architecture comparison of CNN, Transformer, and GNN models trained on the same Lichess Stockfish evaluation data with consistent preprocessing, loss functions, and evaluation protocols. Second, it shows that knowledge distillation from a strong engine via soft policy labels is a viable and scalable training signal for search-less models.
-% [figure] Summary infographic of contributions: framework, data pipeline, and evaluation.
 
 % TODO: Write more - summarise the actual experimental results here once experiments are complete. Which architecture performed best on policy accuracy? On value prediction? On Elo in bot-vs-bot play? Were there surprises?
 
 The project grew beyond its initial design. The ResNet backbone gained Squeeze-and-Excitation blocks for dynamic channel attention, and a spatial policy head replaced global average pooling to preserve the square-level information critical for move selection. 
 
 The data pipeline was redesigned into a system capable of handling over one billion positions. DuckDB-based deduplication removes redundant positions; PV line unrolling generates diverse intermediate positions with inherited evaluations (validated at 96\% accuracy within $\pm 100$\,cp). The resulting dataset, with precalculated value target, enables efficient training at scale.
-% [figure] Data pipeline stages with dataset size changes at each step.
 
 From a software engineering perspective, the backbone-head decoupling pattern, the factory-based model creation, and the YAML-driven configuration system collectively lower the barrier to experimentation: adding a new architecture means implementing a single abstract class, while all training, evaluation, and benchmarking infrastructure is reused without modification.
 
-The project has real limitations. Without search, the models are expected to struggle with deep tactical sequences (the ``horizon effect'') and highly technical endgames. The GNN encoder's computational cost — driven by per-position attack relation computation — remains a training throughput bottleneck, despite the offline pre-encoding pipeline addressing this for CNN and Transformer models.
+The project has real limitations. Without search, the models are expected to struggle with deep tactical sequences (the ``horizon effect'') and highly technical endgames. The GNN encoder's computational cost - driven by per-position attack relation computation - remains a training throughput bottleneck, despite the offline pre-encoding pipeline addressing this for CNN and Transformer models.
 
 % TODO: Write more - once results are in, discuss what the limitations actually looked like in practice. Did the models miss forks? Fail in rook endgames? How did the horizon effect manifest concretely?
 
 Looking ahead, reinforcement learning via MCTS self-play and curriculum-based Stockfish RL is the clearest next step for pushing model strength beyond the supervised learning ceiling. The planned Python/Svelte web platform would provide an interface for human-vs-bot and bot-vs-bot interaction, and sequence modelling approaches (Decision Transformer-style autoregressive move prediction) could enable genuine multi-move planning without any explicit search.
 
-In summary, this project shows that search-less chess is technically feasible and provides a useful testbed for comparing how different neural network families handle spatial, relational, and sequential structure. The framework — with its enhanced encoders, attention mechanisms, and billion-position data pipeline — provides the infrastructure for continued investigation.
+In summary, this project shows that search-less chess is technically feasible and provides a useful testbed for comparing how different neural network families handle spatial, relational, and sequential structure. The framework - with its enhanced encoders, attention mechanisms, and billion-position data pipeline - provides the infrastructure for continued investigation.
 
 % TODO: Write more - the conclusion should end with a reflection on what you learned or what this work means to you, not just a technical summary. A sentence or two of personal voice would strengthen the ending.

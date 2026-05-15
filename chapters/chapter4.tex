@@ -3,7 +3,6 @@
 \section{Development Environment and Tools}
 
 The framework is implemented in Python 3.10 with PyTorch as the deep learning backend. Table~\ref{tab:libraries} lists the principal libraries and what they do.
-% [figure] Overview diagram of software stack and tooling used in development.
 
 \begin{table}[h]
 \centering
@@ -30,7 +29,7 @@ pydantic-settings & Parsing of config yaml \\
 \end{tabular}
 \end{table}
 
-All experiments ran on two hardware configurations: an Apple M-series workstation using the MPS (Metal Performance Shaders) backend for local development, and an NVIDIA GPU (CUDA) for main training. The codebase auto-detects the best available device at startup — preferring CUDA to MPS over CPU — and enables hardware-specific optimisations (TF32 math and cuDNN auto-tuning on CUDA).
+All experiments ran on two hardware configurations: an Apple M-series workstation using the MPS (Metal Performance Shaders) backend for local development, and an NVIDIA GPU (CUDA) for main training. The codebase auto-detects the best available device at startup - preferring CUDA to MPS over CPU - and enables hardware-specific optimisations (TF32 math and cuDNN auto-tuning on CUDA).
 
 Version control uses Git. All hyperparameters live in a single YAML configuration file (\texttt{config/settings.yaml}), parsed at runtime into a hierarchy of Python dataclasses (\texttt{Config}, \texttt{ModelConfig}, \texttt{TrainingConfig}, etc.), so every experiment is fully reproducible from its configuration snapshot.
 
@@ -41,7 +40,7 @@ Version control uses Git. All hyperparameters live in a single YAML configuratio
 The framework's extensibility rests on two abstract base classes:
 
 \begin{itemize}
-    \item \texttt{ChessModel(ABC, nn.Module)}: Every neural network backbone subclasses this and implements \texttt{forward\_backbone(x)} (returning a fixed-dimension feature vector) and \texttt{get\_backbone\_output\_dim()}. The base class provides a concrete \texttt{forward(x)} that chains the backbone with whichever output head has been attached via \texttt{set\_head()}.
+    \item \texttt{ChessModel(ABC, nn.Module)}: Every neural network backbone subclasses this and implements \\ \texttt{forward\_backbone(x)} (returning a fixed-dimension feature vector) and \texttt{get\_backbone\_output\_dim()}. The base class provides a concrete \texttt{forward(x)} that chains the backbone with whichever output head has been attached via \texttt{set\_head()}.
     \item \texttt{StateEncoder(ABC)}: Every board encoder implements \texttt{encode(board)} and \texttt{get\_input\_shape()}. This lets the data pipeline and agents work with any encoder-model pairing without type-checking.
 \end{itemize}
 
@@ -49,7 +48,9 @@ The framework's extensibility rests on two abstract base classes:
 
 \subsection{Factory Pattern}
 
-The \texttt{create\_model(config)} factory reads the backbone name and head type from the configuration, instantiates the appropriate backbone with its architecture-specific parameters (e.g., number of residual blocks, number of attention heads), constructs the matching output head, and attaches it. A companion \texttt{get\_encoder\_for\_model(backbone)} factory maps backbone names to their corresponding encoder classes. This two-step factory keeps backbone-encoder pairings consistent.
+The \texttt{create\_model(config)} factory reads the backbone name and head type from the configuration, instantiates the appropriate backbone with its architecture-specific parameters (e.g., number of residual blocks, number of attention heads), constructs the matching output head, and attaches it. 
+\\
+A companion \texttt{get\_encoder\_for\_model(backbone)} factory maps backbone names to their corresponding encoder classes. This two-step factory keeps backbone-encoder pairings consistent.
 
 \subsection{Configuration System}
 All tunable parameters are centralised in a YAML file and parsed into nested dataclasses:
@@ -87,7 +88,6 @@ A custom \texttt{collate\_fn} batches examples into the format expected by each 
 \subsection{Neural Network Architecture}
 
 Six backbone architectures are implemented, two per model family.
-% [figure] Backbone summary: CNN/Transformer/GNN family blocks with input/output dimensions.
 
 \subsubsection{Convolutional Neural Networks}
 
@@ -110,6 +110,37 @@ Six backbone architectures are implemented, two per model family.
 % TODO: Write more - discuss any training instabilities observed with GAT (e.g., attention collapse) and how edge attributes helped
 
 \subsection{Training Process}
+All the bash scripts needed to reproduce the training runs - with the exact configs listed below - live in scripts/training.
+% add a table with all hyperparameters for reproducibility
+\begin{table}[h]
+\centering
+
+\caption{Training configuration parameters used across all experiments.}
+
+\label{tab:training-config}
+\begin{tabular}{ll}
+\hline
+\textbf{Hyperparameter} & \textbf{Value} \\
+
+\hline
+Batch Size (Default) & 2048 \\
+Batch Size (GAT) & 1024 \\
+Data Size & 10M, 100M, 200M, 500M, 1B \\
+Epochs (per data size) & 50, 15, 10, 5, 1 \\
+Learning Rate & 0.001 \\
+Weight Decay & 0.0001 \\
+Policy Loss Weight & 1.0 \\
+Value Loss Weight & 1.0 \\
+Gradient Accumulation Steps & 1 \\
+Gradient Clip Max Norm & 1.0 \\
+LR Scheduler & Cosine \\
+LR Step Size & 10 \\
+LR Gamma & 0.1 \\
+Device & CUDA (8 workers) \\
+\hline
+
+\end{tabular}
+\end{table}
 
 \subsubsection{Loss Functions}
 
@@ -127,15 +158,19 @@ Training uses the AdamW optimiser with a default learning rate of $10^{-3}$ and 
 
 \subsubsection{Mixed Precision and Compilation}
 
-On CUDA devices, training uses float16 autocast with \texttt{GradScaler} to maintain numerical stability. On MPS (Apple Silicon), autocast is enabled but the scaler is disabled — MPS doesn't support it. Non-GNN backbones are wrapped with \texttt{torch.compile} for kernel fusion and operator-level optimisation. GNN models had to be excluded from compilation because their dynamic graph structures prevent effective tracing.
+On CUDA devices, training uses float16 autocast with \texttt{GradScaler} to maintain numerical stability. On MPS (Apple Silicon), autocast is enabled but the scaler is disabled - MPS doesn't support it. Non-GNN backbones are wrapped with \texttt{torch.compile} for kernel fusion and operator-level optimisation. GNN models had to be excluded from compilation because their dynamic graph structures prevent effective tracing.
 
 \subsubsection{Checkpointing}
 
 After each epoch, the trainer serialises the model state dict, the optimiser state, the scheduler state, the epoch number, the global step count, and the best validation loss. At the end of training, intermediate checkpoints are pruned to keep only every fifth epoch, reducing storage overhead while preserving enough granularity for post-hoc analysis.
 
 \section{Architectural Enhancements}
-
+% maybe write why changes were made kind of hard to showcase diagram for the same
 After the initial implementation and early training runs, several architectural improvements addressed weaknesses I'd noticed.
+
+One of the main weaknesses that was addressed was that models played openings almost perfectly. Still, as soon as they reached the middlegame, they would start making mistakes/blunders against Stockfish, leading to a gradual decline in the evaluation and eventual loss.
+
+By changing the policy head to use more of the model's spatial feature improved that. With SE blocks, ResNet can prioritise different goals at different parts of the game, like for example developing in the opening, king safety in the middle game, and pawn promotion in the end game. Activation function was changed to SiLU because the majority of the positions cluster around 0. \ref{fig:dataset_analysis}
 % TODO: Write more - discuss the encoding time overhead of computing these extra planes and whether it was worth it in practice
 
 \subsection{Spatial Policy Head}
@@ -152,7 +187,7 @@ ReLU activations in the ConvNet and ResNet backbones were replaced with SiLU (Sw
 
 \section{Data Pipeline Evolution}
 
-The initial streaming Parquet pipeline (Section~\ref{sec:initial_pipeline}) worked well for prototyping but became the training bottleneck at scale.
+The initial streaming Parquet pipeline worked well for prototyping but became the training bottleneck at scale.
 
 \subsection{Stage 1: Filtering and Deduplication}
 \label{sec:initial_pipeline}
@@ -160,7 +195,7 @@ The initial streaming Parquet pipeline (Section~\ref{sec:initial_pipeline}) work
 DuckDB's out-of-core SQL engine normalises FEN strings (stripping halfmove and fullmove counters), groups by the normalised FEN, and keeps only the row with the highest analysis depth or node count. This eliminates redundant positions that would otherwise bias the training distribution toward common openings. Also removes any entries that didn't meet the criteria of >= 18 depth or had a centipawn evaluation that fell outside the range of ± 4000.
 
 \subsection{Stage 2: PV Line Unrolling}
-For each base position, the first $N$ moves of the principal variation are played out using \texttt{python-chess}. Each intermediate position is emitted as a separate training example, with the subsequent PV move as its policy target. The root evaluation inherits sign flips across alternating sides — avoiding the prohibitive cost of re-evaluating every unrolled position with Stockfish. A drift analysis validated this: 96\% of inherited evaluations stayed within $\pm 100$ centipawns of the independently computed value.
+For each base position, the first $N$ moves of the principal variation are played out using \texttt{python-chess}. Each intermediate position is emitted as a separate training example, with the subsequent PV move as its policy target. The root evaluation inherits sign flips across alternating sides - avoiding the prohibitive cost of re-evaluating every unrolled position with Stockfish. A drift analysis validated this: 96\% of inherited evaluations stayed within $\pm 100$ centipawns of the independently computed value.
 
 \subsection{Stage 3: Deduplication and Target Computation}
 Positions were normalished again since during the PV unrolling we could have arrived at the same position, in which case the position with the higher depth count or knodes count was kept and others were discarded. By doing this we were able to go from about 3 billion positions to 1.8 billion positions. Engine centipawn scores are converted value targets as ± 1 which are stored as \texttt{float16} (2 bytes).
@@ -172,25 +207,31 @@ Positions were normalished again since during the PV unrolling we could have arr
 Two baselines anchor the evaluation:
 
 \begin{itemize}
-    \item \textbf{RandomAgent:} Plays uniformly at random from the legal move set. It's the lower bound — if a trained model can't beat random, something has gone wrong.
+    \item \textbf{RandomAgent:} Plays uniformly at random from the legal move set. It's the lower bound - if a trained model can't beat random, something has gone wrong.
     \item \textbf{UCIAgent (Stockfish):} Wraps Stockfish at configurable depth and skill levels. At full strength (depth 15+), Stockfish sets the upper bound. At reduced depths (1-5), it provides intermediate calibration points for estimating Elo.
 \end{itemize}
 
 \section{Benchmarking and Evaluation Pipeline}
 
-% [figure] Benchmarking pipeline flow: match scheduling → analysis → plots → reports.
-The benchmarking system automates model evaluation through six stages:
+The benchmarking system automates model evaluation through three stages:
 
 \begin{enumerate}
     \item Each trained model plays a configurable number of games against Stockfish, alternating colours for fairness.
     \item After every move, Stockfish analyses the resulting position at depth 18, recording the centipawn score from White's perspective. Mate scores are converted to large constants ($\pm 10000$).
     \item Each game is exported in Portable Game Notation with embedded evaluation comments, enabling review in standard chess software (Lichess, Chess.com, ChessBase).
-    \item Matplotlib generates evaluation flow charts for each game, plotting centipawn score against move number with win/draw/loss shading. A combined comparison plot overlays all models.
-    \item A Markdown report is generated with win/draw/loss tables, timing statistics (mean, median, min, max), and links to PGN and figure files.
+    %\item Matplotlib generates evaluation flow charts for each game, plotting centipawn score against move number with win/draw/loss shading. A combined comparison plot overlays all models.
+    %\item A Markdown report is generated with win/draw/loss tables, timing statistics (mean, median, min, max), and links to PGN and figure files.
 \end{enumerate}
 
 \section{Documentation}
-
+% expand with more information on how to run certain things
 The codebase follows a consistent documentation standard: every module, class, and public method has a docstring specifying its purpose, arguments, and return values. A \texttt{README.md} covers installation, a quick-start guide, and example training commands. The \texttt{setup.sh} script automates environment setup and dependency installation.
 
+Reproducibility was kept in mind throughout the project. Every experiment is fully defined by its configuration snapshot - copy the \texttt{config/settings.yaml} that produced a checkpoint, and you can re-run the exact same training schedule from scratch. The \texttt{README.md} also documents the expected directory layout under \texttt{runs/}, so someone picking up the codebase knows where checkpoints, PGN files, and benchmark outputs land without having to trace the code. 
+
+Shell scripts in \texttt{scripts/training/} and \texttt{scripts/benchmark/} encode the exact commands used for every model variant, meaning there's no reliance on undocumented command-line flags or manually remembered arguments. On top of that, a \texttt{download\_models.sh} script lets anyone pull the pre-trained checkpoints directly. 
+
+The dataset is also pre-processed and can be accessed at 
+\\
+\texttt{https://www.kaggle.com/datasets/bhavyasingh2611/lichess-evals-stripped} allowing you to download the dataset, puzzles and be able to train/benchmark the models.
 % TODO: Write more - discuss documentation for reproducibility (e.g., how experiment configs are versioned), any auto-generated API docs, and how the documentation evolved as the project grew
